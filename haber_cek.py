@@ -1,74 +1,55 @@
+import os
 import feedparser
 from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
+from groq import Groq
 
-# 10 şirketin hepsi
+# Gizli şifremizi okuyup yapay zekayı uyandırıyoruz
+load_dotenv()
+api_key = os.getenv("GROQ_API_KEY")
+client = Groq(api_key=api_key)
+
 SIRKETLER = [
     {"isim": "Delta Air Lines",      "arama": "Delta+Air+Lines"},
-    {"isim": "United Airlines",      "arama": "United+Airlines"},
     {"isim": "Turkish Airlines",     "arama": "Turkish+Airlines"},
-    {"isim": "Lufthansa",            "arama": "Lufthansa"},
-    {"isim": "Air France KLM",       "arama": "Air+France+KLM"},
-    {"isim": "Singapore Airlines",   "arama": "Singapore+Airlines"},
-    {"isim": "ANA Holdings",         "arama": "ANA+Holdings"},
-    {"isim": "Ryanair",              "arama": "Ryanair"},
-    {"isim": "Etihad Airways",       "arama": "Etihad+Airways"},
-    {"isim": "LATAM Airlines",       "arama": "LATAM+Airlines"}
-]
+    {"isim": "Lufthansa",            "arama": "Lufthansa"}
+] # Şimdilik sistemi yormamak için 3 şirketle test ediyoruz
 
-# Son 24 saat filtresi
 simdi = datetime.now(timezone.utc)
 son_24_saat = simdi - timedelta(hours=24)
 
-print("CONTRAIL — Haber Motoru Başladı")
-print(f"Tarih: {simdi.strftime('%d.%m.%Y %H:%M')} UTC")
+print("CONTRAIL — AI Destekli Haber Motoru Başladı")
 print("=" * 60)
-
-tum_haberler = []
 
 for sirket in SIRKETLER:
     url = f"https://news.google.com/rss/search?q={sirket['arama']}&hl=en&gl=US&ceid=US:en"
     feed = feedparser.parse(url)
     
-    sirket_haberleri = []
+    print(f"\n✈️ ŞİRKET: {sirket['isim']}")
     
-    for haber in feed.entries:
-        try:
-            tarih = datetime(*haber.published_parsed[:6], tzinfo=timezone.utc)
-            if tarih >= son_24_saat:
-                sirket_haberleri.append({
-                    "sirket": sirket["isim"],
-                    "baslik": haber.title,
-                    "tarih": tarih.strftime("%d.%m.%Y %H:%M"),
-                    "kaynak": haber.source.title if hasattr(haber, "source") else "Bilinmiyor",
-                    "link": haber.link
-                })
-        except:
-            continue
-    
-    tum_haberler.extend(sirket_haberleri)
-    print(f"✓ {sirket['isim']}: {len(sirket_haberleri)} haber bulundu")
-
-# Tarihe göre sırala (en yeni önce)
-tum_haberler.sort(key=lambda x: x["tarih"], reverse=True)
-
-# Dosyaya kaydet
-dosya_adi = f"haberler_{simdi.strftime('%Y%m%d_%H%M')}.txt"
-
-with open(dosya_adi, "w", encoding="utf-8") as f:
-    f.write(f"CONTRAIL — Haber Raporu\n")
-    f.write(f"Oluşturulma: {simdi.strftime('%d.%m.%Y %H:%M')} UTC\n")
-    f.write(f"Toplam haber: {len(tum_haberler)}\n")
-    f.write("=" * 60 + "\n\n")
-    
-    for haber in tum_haberler:
-        f.write(f"ŞİRKET : {haber['sirket']}\n")
-        f.write(f"BAŞLIK : {haber['baslik']}\n")
-        f.write(f"TARİH  : {haber['tarih']}\n")
-        f.write(f"KAYNAK : {haber['kaynak']}\n")
-        f.write(f"LINK   : {haber['link']}\n")
-        f.write("-" * 60 + "\n\n")
-
-print(f"\n{'=' * 60}")
-print(f"TOPLAM: {len(tum_haberler)} haber son 24 saatte")
-print(f"Dosya kaydedildi: {dosya_adi}")
-print("=" * 60)
+    # Her şirket için sadece en yeni 1 haberi test için alıyoruz
+    for haber in feed.entries[:1]:
+        tarih = datetime(*haber.published_parsed[:6], tzinfo=timezone.utc)
+        
+        if tarih >= son_24_saat:
+            baslik = haber.title
+            print(f"Orijinal Başlık: {baslik}")
+            print("Yapay Zeka Analiz Ediyor...")
+            
+            # Groq AI'a analiz talimatı veriyoruz
+            prompt = f"""
+            Şu havacılık haberini analiz et: "{baslik}"
+            Bana tam olarak şu formatta cevap ver:
+            Kategori: (Filo, Finansal, Operasyonel veya Jeopolitik)
+            Skor: (1 ile 10 arası bir önem skoru)
+            Özet: (Tek cümlelik Türkçe özet)
+            """
+            
+            cevap = client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model="llama-3.1-8b-instant", 
+            )
+            
+            print("-" * 40)
+            print(cevap.choices[0].message.content)
+            print("=" * 60)

@@ -1,0 +1,111 @@
+CONTRAIL — AI YATIRIMCI RAPORU
+Tarih: 24.06.2026 16:15 UTC
+============================================================
+
+✈️ ŞİRKET: Delta Air Lines
+----------------------------------------
+Orijinal Başlık: Delta CEO Ed Bastian reveals what he says must happen for airline ticket prices to fall - Fox Business
+Kategori: Filo
+Skor: 8
+Özet: Delta CEO'su Ed Bastian, havayolu bilet fiyatlarının düşmesi için gerçekleşmesi gereken olayları açıkladı.
+.
+Orijinal Başlık: Delta flight crew saved lives in close call at Boston's Logan Airport, senator says - CBS News
+Analiz sonucu:
+
+Kategori: Operasyonel
+Skor: 8/10
+Özet: Boston'un Logan Havalimanı'nde meydana gelen yakın bir kazada, Delta uçuş ekibi hayatları kurtardı, bir senatör tarafından duyuruldu.
+.
+Orijinal Başlık: Delta named to The Civic 50, a standard for superior corporate citizenship, for ninth consecutive year - Delta News Hub
+Kategori: Operasyonel
+Skor: 8
+Özet: Delta Havacılık, 9. yılına kadar süren üstün toplumsal katılımcı davranış için "The Civic 50" ödülüne layık görüldü.
+.
+
+✈️ ŞİRKET: United Airlines
+----------------------------------------
+Orijinal Başlık: Easy-to-miss United MileagePlus change could help your kids earn more miles - The Points Guy
+Kategori: Finansal
+Skor: 8
+Özet: United MileagePlus points sistemi bir değişikliğe uğradı ve çocuklar için yeni bir avantaj getirildi.
+.
+
+✈️ ŞİRKET: Turkish Airlines
+----------------------------------------
+Orijinal Başlık: 11-Hour Flights: Turkish Airlines' Surprisingly Long Boeing 737 MAX Routes Revealed [Map] - Simple Flying
+Haber analiz ettiğimiz için aşağıdaki sonuçları elde edebiliriz:
+
+Kategori: Operasyonel
+Skor: 8/10 (Uzun uçuşlar ve Boeing 737 MAX gibi uçak modelleri operasyonel stratejilere ilişkin bir haber olduğu için bu skora ulaştık.)
+Özet: Türk Hava Yolları, sürpriz bir şekilde 737 MAX uçağı ile yaklaşık 11 saatlik seyahatin oluşturdu.
+.
+
+✈️ ŞİRKET: Lufthansa
+----------------------------------------
+Son 24 saatte önemli bir haber akışı tespit edilmedi.
+
+✈️ ŞİRKET: Air France KLM
+----------------------------------------
+Orijinal Başlık: Airlines resume some Middle East flights but disruption continues - Reuters
+Kategori: Operasyonel
+Skor: 6
+Özet: Havayolları bazı Orta Doğu uçuşlarını yeniden iptal etmesine rağmen, işlerlikteki ihmal devam ediyor.
+.
+Orijinal Başlık: France Joins Germany, Hungary, Netherlands, Belgium and Poland as Brussels Airlines, Air France, Lufthansa, KLM and LOT Polish Airlines as EU–Kazakhstan Aviation Deal Opens 17 Countries, Unlocks 20-Year Negotiation Breakthrough and Accelerates € - Travel And Tour World
+**Analiz:**
+
+* **Kategori:** Jeopolitik
+* **Skor:** 8/10
+* **Özet:** Fransa, Almanya, Macaristan, Hollanda, Belçika ve Polonya ile birlikte, Avrupa Birliği ve Özbekistan arasında航空 anlaşmasıyla 17 ülkenin erişimi açılırken, 20 yıl süren pazarlık breakthroughu ve 10 milyar Euro'nun daha fazla gelirine katkıda bulunacaktır.
+
+Açıklama:
+- **Kategori:** İşlem olarak uluslararası politik bir anlaşmayı içerdiğinden, Jeopolitik kategori uygun görünmektedir.
+- **Skor:** İşin ciddiyeti ve önemli sonucu nedeniyle skoru 8/10 olarak aldım. Ancak daha çok ayrıntılı bilgi gerektiren, daha karmaşık bir iş olabilirdi.
+- **Özet:** Özetle, anlaşmanın amacı ve katılımcı ülkelerin sayısını ve muhtemel ekonomik etkisini içerir.
+.
+
+✈️ ŞİRKET: Singapore Airlines
+----------------------------------------
+Son 24 saatte önemli bir haber akışı tespit edilmedi.
+
+✈️ ŞİRKET: ANA Holdings
+----------------------------------------
+Son 24 saatte önemli bir haber akışı tespit edilmedi.
+
+✈️ ŞİRKET: Ryanair
+----------------------------------------
+Orijinal Başlık: Ryanair adds grandmother as co-defendant in child scalding case - The Irish Times
+Kategori: Operasyonel
+Skor: 6
+Özet: Ryanair, bir çocukun yakalandığı yara olayının ardından, 6 yaşındaki çocuğun anneannesini ikinci savunma olarak davadan sorumlu tuttu.
+.
+Orijinal Başlık: Ryanair condemns arson attack on houses occupied by its staff in Swords - The Irish Times
+Kategori: Operasyonel
+Skor: 6
+Özet: Ryanair'nin kullandığı uçak pilotlarının ve diğer Personeli tarafından kullanılan evler bombalandı.
+.
+
+✈️ ŞİRKET: Etihad Airways
+----------------------------------------
+Orijinal Başlık: Etihad Airways Unveils Exclusive India-Origin Business Class Promotion Offering Discounted Premium Long-Haul Travel Across 45+ International Destinations Including Europe, USA, Africa and Central Asia Through Abu Dhabi Global Transit Gateway - Travel And Tour World
+**Analiz:**
+
+**Kategori:** Operasyonel
+**Skor:** 9/10
+**Özet:** Etihad Airways, Abu Dhabi üzerinden 45'den fazla uluslararası destinasyona seyahat etmesine izin veren bir global transit gateway aracılığıyla Hindistan kökenli iş sınıfı promosyonunu duyurdu.
+
+Analizin açıklaması:
+
+Etihad Airways'ın bu açıklaması, operasyonel anlamda yenilik içerir. Bir global transit gateway sunarak, müşterilere daha fazla destinasyona erişim imkanı sunması ve seyahat sürecini kolaylaştırmaya çalışması etkili bir operasyonel adım olarak düşünülebilir. Promosyon, belirli destinasyonlara seyahat için daha uygun fiyatlar sunarak, müşteri çekme ve tutma anlamında da başarılı bir hamle olabilir. Bu nedenle, skor olarak 9/10 verladım.
+.
+
+✈️ ŞİRKET: LATAM Airlines
+----------------------------------------
+Orijinal Başlık: ATPCO appoints LATAM Airlines Group’s Rosario Phillips chair of the board - Travolution
+Analiziniz aşağıdadır:
+
+Kategori: Finansal
+Skor: 6
+Özet: ATPCO, LATAM Havayolları Grubu'nun Rosario Phillips'i yeni başkanlığına atadı.
+.
+

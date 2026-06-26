@@ -4,20 +4,28 @@ import feedparser
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from groq import Groq
+import psycopg2
 
 load_dotenv()
+
+conn = psycopg2.connect(
+    host="localhost",
+    database="contrail",
+    user="postgres",
+    password="250801"
+)
+cursor = conn.cursor()
+
 api_key = os.getenv("GROQ_API_KEY")
 client = Groq(api_key=api_key)
 
 SIRKETLER = [
     {
-        "isim": "Delta Airlines",
+        "isim": "Delta Air Lines",
         "borsa_kodu": "DAL",
         "aramalar": [
-            "Delta",
-            "delta+airline",
-            "delta+airlines",
             "Delta+Air+Lines",
+            "Delta+Airlines",
             "Delta+Air+Lines+Inc",
             "DAL+airline"
         ]
@@ -26,11 +34,8 @@ SIRKETLER = [
         "isim": "United Airlines",
         "borsa_kodu": "UAL",
         "aramalar": [
-            "United+airline",
-            "UNITED+Airlines",
-            "United+Airlines+Inc",
-            "United",
             "United+Airlines",
+            "United+Airlines+Inc",
             "United+Airlines+Holdings",
             "UAL+airline"
         ]
@@ -126,52 +131,30 @@ SIRKETLER = [
 ]
 
 HAVACILIK_KELIMELERI = [
-    # İngilizce
     "airline", "airlines", "aviation", "aircraft", "airport", "flight", "flights",
     "airfare", "passenger", "passengers", "fleet", "pilot", "cargo", "runway",
     "boeing", "airbus", "route", "routes", "hub", "terminal", "gate",
     "frequent flyer", "loyalty", "miles", "seat", "cabin", "crew",
     "skyteam", "star alliance", "oneworld", "low cost", "carrier",
-    # Borsa kodları
     "DAL", "UAL", "THYAO", "LHA", "LHAG", "RYAAY", "RYAI", "LTM",
     "C6L", "SINGY", "SINGF", "9202",
-    # Şirket isimleri
     "delta air", "united air", "turkish air", "lufthansa", "ryanair",
     "air france", "klm", "singapore air", "etihad", "latam", "ana holdings",
     "all nippon", "thy",
-    # Türkçe
     "havayolu", "havayolları", "uçuş", "uçak", "havalimanı", "yolcu",
     "filo", "pilot", "kargo", "kabin", "rota", "hat",
-    # Fransızca
     "aérien", "aérienne", "aéroport", "compagnie aérienne", "vol", "vols",
     "passager", "passagers", "flotte", "pilote", "cabine", "transporteur",
-    "ligne aérienne", "low cost", "siège",
-    # Almanca
     "fluggesellschaft", "flughafen", "flugzeug", "flug", "flüge",
     "passagier", "passagiere", "luftfahrt", "billigflieger", "fracht",
-    "strecke", "kabine",
-    # Japonca (romaji)
-    "koukuu", "hikouki", "tabi", "kyakusen",
-    # İspanyolca / Portekizce (LATAM için)
     "aerolínea", "aerolinea", "aeropuerto", "vuelo", "vuelos",
     "pasajero", "pasajeros", "flota", "piloto", "carga", "ruta",
-    "compañía aérea", "baixo custo", "linha aérea", "passageiro",
-    # Arapça (Etihad için)
-    "etihad", "abu dhabi aviation", "طيران", "مطار",
-    # Hollandaca (KLM için)
     "luchtvaart", "vliegtuig", "vlucht", "vluchten", "luchthaven",
-    "piloot", "vracht",
-    # İtalyanca
     "aereo", "aerei", "aeroporto", "volo", "voli", "passeggero",
-    "compagnia aerea", "flotta", "pilota",
-    # Korece (romaji)
-    "hangong", "bihaenggi",
-    # Uçak modelleri
+    "etihad", "abu dhabi aviation", "طيران", "مطار",
     "A320", "A321", "A330", "A350", "A380",
     "737", "777", "787", "747", "MAX",
-    # Kurumlar
     "IATA", "ICAO", "FAA", "EASA",
-    # Finansal (havacılık haberi olduğu bağlamda)
     "IPO", "earnings", "revenue", "profit", "loss"
 ]
 
@@ -194,14 +177,12 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
     for sirket in SIRKETLER:
         print(f"\n✈️  {sirket['isim']} analiz ediliyor...")
 
-        # Tüm arama terimlerinden haberleri topla
         tum_entriler = []
         for arama in sirket["aramalar"]:
             url = f"https://news.google.com/rss/search?q={arama}&hl=en&gl=US&ceid=US:en"
             feed = feedparser.parse(url)
             tum_entriler.extend(feed.entries)
 
-        # Duplicate haberleri temizle
         gorulmus = set()
         benzersiz_entriler = []
         for entry in tum_entriler:
@@ -213,7 +194,6 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
 
         for haber in benzersiz_entriler[:10]:
 
-            # 1. Havacılık filtresi
             baslik_kucuk = haber.title.lower()
             havacilik_haberi = any(
                 kelime.lower() in baslik_kucuk
@@ -223,7 +203,6 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
                 toplam_filtrelenen += 1
                 continue
 
-            # 2. Tarih filtresi
             try:
                 tarih = datetime(*haber.published_parsed[:6], tzinfo=timezone.utc)
             except Exception:
@@ -235,15 +214,16 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
             baslik = haber.title
 
             prompt = f"""
-            Şu havacılık haberini analiz et: "{baslik}"
-            Bana kesinlikle SADECE aşağıdaki JSON formatında cevap ver. Başında veya sonunda hiçbir açıklama yapma:
-            {{
-                "Kategori": "Filo, Finansal, Operasyonel veya Jeopolitik",
-                "Skor": 7,
-                "Ozet": "Tek cümlelik Türkçe özet"
-            }}
-            Skor alanı mutlaka 1 ile 10 arasında tam sayı olsun, tırnak içinde değil.
-            """
+Su havacilik haberini analiz et: {baslik}
+Bana kesinlikle SADECE asagidaki JSON formatinda cevap ver:
+{{
+    "Kategori": "Filo, Finansal, Operasyonel veya Jeopolitik",
+    "Skor": 7,
+    "Ozet": "Tek cumlelik Turkce ozet. Tirnak isareti kullanma."
+}}
+Skor alani mutlaka 1 ile 10 arasinda tam sayi olsun, tirnak icinde degil.
+Ozet icinde asla tirnak isareti kullanma.
+"""
 
             try:
                 cevap = client.chat.completions.create(
@@ -267,6 +247,25 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
                 rapor.write(f"ÖZET     : {ai_verisi.get('Ozet', '-')}\n")
                 rapor.write("-" * 50 + "\n\n")
 
+                try:
+                    cursor.execute("""
+                        INSERT INTO haberler (sirket, borsa_kodu, baslik, tarih, kategori, skor, ozet, link)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        sirket['isim'],
+                        sirket['borsa_kodu'],
+                        baslik,
+                        tarih,
+                        ai_verisi.get('Kategori', 'Bilinmiyor'),
+                        skor,
+                        ai_verisi.get('Ozet', '-'),
+                        haber.link if hasattr(haber, 'link') else ''
+                    ))
+                    conn.commit()
+                except Exception as db_err:
+                    print(f"  -> DB hatası: {db_err}")
+                    conn.rollback()
+
                 sirket_haber_sayisi += 1
                 toplam_haber += 1
 
@@ -284,6 +283,9 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
     rapor.write(f"FİLTRELENEN ALAKASIZ HABER : {toplam_filtrelenen}\n")
     rapor.write(f"HATA SAYISI                : {toplam_hata}\n")
     rapor.write(f"RAPOR SONU\n")
+
+cursor.close()
+conn.close()
 
 print(f"\n{'=' * 60}")
 print(f"TOPLAM: {toplam_haber} haber analiz edildi")

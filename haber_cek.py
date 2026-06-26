@@ -1,12 +1,34 @@
 import os
 import json
 import feedparser
+import requests
 from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from groq import Groq
 import psycopg2
 
 load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+def send_telegram_alert(haber_basligi, sirket, skor, link):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    
+    mesaj = (
+        f"🚨 <b>KRİTİK HAVACILIK HABERİ</b> 🚨\n\n"
+        f"🏢 <b>Şirket:</b> {sirket}\n"
+        f"🔥 <b>Skor:</b> {skor}/10\n"
+        f"📰 <b>Başlık:</b> {haber_basligi}\n\n"
+        f"🔗 <a href='{link}'>Haberi Oku</a>"
+    )
+    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": mesaj, "parse_mode": "HTML"}
+    try:
+        requests.post(url, json=payload)
+    except Exception as e:
+        print(f"Telegram bildirimi gönderilemedi: {e}")
+api_key = os.getenv("GROQ_API_KEY")
+client = Groq(api_key=api_key)
 
 conn = psycopg2.connect(
     host="localhost",
@@ -16,15 +38,34 @@ conn = psycopg2.connect(
 )
 cursor = conn.cursor()
 
-api_key = os.getenv("GROQ_API_KEY")
-client = Groq(api_key=api_key)
-
-# Unique constraint yoksa ekle
 try:
     cursor.execute("ALTER TABLE haberler ADD CONSTRAINT unique_baslik UNIQUE (baslik);")
+    if int(skor) >= 8:
+        send_telegram_alert(baslik, sirket, skor, link)
     conn.commit()
 except Exception:
     conn.rollback()
+
+def send_telegram_alert(baslik, sirket, skor, link):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    mesaj = (
+        f"🚨 <b>KRİTİK HAVACILIK HABERİ</b> 🚨\n\n"
+        f"🏢 <b>Şirket:</b> {sirket}\n"
+        f"🔥 <b>Skor:</b> {skor}/10\n"
+        f"📰 <b>Başlık:</b> {baslik}\n\n"
+        f"🔗 <a href='{link}'>Haberi Oku</a>"
+    )
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": mesaj,
+        "parse_mode": "HTML"
+    }
+    try:
+        requests.post(url, json=payload)
+    except Exception as e:
+        print(f"Telegram hatası: {e}")
 
 SIRKETLER = [
     {
@@ -145,7 +186,6 @@ SIRKETLER = [
 ]
 
 HAVACILIK_KELIMELERI = [
-    # İngilizce — genel
     "airline", "airlines", "aviation", "aircraft", "airport", "flight", "flights",
     "airfare", "passenger", "passengers", "fleet", "pilot", "cargo", "runway",
     "boeing", "airbus", "route", "routes", "hub", "terminal", "gate", "cabin",
@@ -153,55 +193,38 @@ HAVACILIK_KELIMELERI = [
     "frequent flyer", "loyalty", "miles", "seat", "layover", "codeshare",
     "narrowbody", "widebody", "turbulence", "jetway", "tarmac", "hangar",
     "charter", "leasing", "lessor", "load factor", "yield", "ancillary",
-    # Şirket isimleri — İngilizce
     "delta air", "united airlines", "turkish airlines", "lufthansa", "ryanair",
     "air france", "klm", "singapore airlines", "etihad", "latam",
     "ana holdings", "all nippon", "thy",
-    # Borsa kodları
     "DAL", "UAL", "THYAO", "LHA", "LHAG", "RYAAY", "RYAI", "LTM",
     "C6L", "SINGY", "SINGF", "9202", "AF",
-    # Uçak modelleri
     "A220", "A320", "A321", "A321neo", "A330", "A350", "A380",
     "737", "737 MAX", "777", "777X", "787", "787-9", "747",
-    # Kurumlar ve düzenleyiciler
     "IATA", "ICAO", "FAA", "EASA", "CAAC", "DGCA",
-    # Finansal terimler (havacılık bağlamında)
     "IPO", "earnings", "revenue", "profit", "loss", "EBITDA",
     "hedging", "fuel hedge", "jet fuel",
-    # Türkçe
     "havayolu", "havayolları", "uçuş", "uçak", "havalimanı", "yolcu",
     "filo", "pilot", "kargo", "kabin", "rota", "hat", "thy",
     "bilet", "sefer", "iniş", "kalkış", "terminal", "pist",
-    # Fransızca (Air France-KLM için)
     "aérien", "aérienne", "aéroport", "aéronef", "compagnie aérienne",
     "vol", "vols", "passager", "passagers", "flotte", "pilote",
     "cabine", "transporteur", "ligne aérienne", "siège", "fret aérien",
-    "low cost", "aviation", "avion",
-    # Almanca (Lufthansa için)
+    "avion",
     "fluggesellschaft", "flughafen", "flugzeug", "flug", "flüge",
     "passagier", "passagiere", "luftfahrt", "billigflieger", "fracht",
-    "strecke", "kabine", "triebwerk", "flotte", "pilot",
-    "lufthansa", "eurowings", "swiss air",
-    # Japonca romaji (ANA için)
+    "strecke", "kabine", "triebwerk", "eurowings", "swiss air",
     "koukuu", "hikouki", "kyakusen", "zassen", "tobu",
-    # İspanyolca (LATAM için)
     "aerolínea", "aerolinea", "aeropuerto", "vuelo", "vuelos",
     "pasajero", "pasajeros", "flota", "piloto", "carga", "ruta",
     "compañía aérea", "aviación", "avión",
-    # Portekizce (LATAM Brezilya için)
     "companhia aérea", "aeroporto", "voo", "passageiro", "frota",
     "baixo custo", "linha aérea", "aviação",
-    # Hollandaca (KLM için)
     "luchtvaart", "vliegtuig", "vlucht", "vluchten", "luchthaven",
     "piloot", "vracht", "maatschappij",
-    # İtalyanca
     "aereo", "aerei", "aeroporto", "volo", "voli", "passeggero",
     "compagnia aerea", "flotta", "pilota", "aviazione",
-    # Arapça (Etihad için)
     "etihad", "abu dhabi aviation", "طيران", "مطار", "ركاب",
-    # Korece romaji (ANA/Singapore için)
-    "hangong", "bihaenggi", "hangong",
-    # Çince romaji (bölgesel haberler için)
+    "hangong", "bihaenggi",
     "hangkong", "feiji", "jichang"
 ]
 
@@ -260,18 +283,26 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
                 continue
 
             baslik = haber.title
+            link = haber.link if hasattr(haber, 'link') else ''
 
-            prompt = f"""
-Su havacilik haberini analiz et: {baslik}
-Bana kesinlikle SADECE asagidaki JSON formatinda cevap ver:
-{{
-    "Kategori": "Filo, Finansal, Operasyonel veya Jeopolitik",
-    "Skor": 7,
-    "Ozet": "Tek cumlelik Turkce ozet. Tirnak isareti kullanma."
-}}
-Skor alani mutlaka 1 ile 10 arasinda tam sayi olsun, tirnak icinde degil.
-Ozet icinde asla tirnak isareti kullanma.
-"""
+            pprompt = f"""
+    Sen kıdemli bir havacılık finans ve operasyon analistisin. 
+    Aşağıdaki havacılık haberini okuyup analiz et.
+    Bana SADECE JSON formatında şu bilgileri dön (başka hiçbir açıklama yazma):
+    {{
+        "kategori": "Finans, Operasyon, Kaza/Kriz, Müşteri Deneyimi veya Diğer",
+        "skor": 1 ile 10 arası tamsayı,
+        "ozet": "Türkçe 2-3 cümlelik net ve profesyonel özet"
+    }}
+
+    SKORLAMA KRİTERLERİ (Bu kurallara KESİNLİKLE uyacaksın):
+    1-3 Puan (Düşük): Rutin ve sıradan gelişmeler (Örn: Uçak içi menü değişimi, tekil uçuş rötarları, basit PR kampanyaları).
+    4-6 Puan (Orta): Şirket için olumlu/olumsuz ama yönetilebilir durumlar (Örn: Tek bir yeni rota açılışı, beklenen çeyreklik bilanço sonuçları, küçük sponsorluklar).
+    7-8 Puan (Yüksek): Şirketin finansal yapısını veya operasyonunu ciddi etkileyecek stratejik gelişmeler (Örn: Üst düzey yönetim değişiklikleri/CEO istifası, bölgesel grevler, büyük uçak siparişleri, beklenmedik zarar açıklamaları).
+    9-10 Puan (Kritik): Şirketin veya sektörün kaderini değiştirecek acil krizler (Örn: Ölümcül uçak kazaları, iflas süreçleri, küresel uçuş durdurma kararları (grounding), tüm sistemi çökerten siber saldırılar).
+
+    Haber Metni: {haber_metni}
+    """
 
             try:
                 cevap = client.chat.completions.create(
@@ -308,7 +339,7 @@ Ozet icinde asla tirnak isareti kullanma.
                         ai_verisi.get('Kategori', 'Bilinmiyor'),
                         skor,
                         ai_verisi.get('Ozet', '-'),
-                        haber.link if hasattr(haber, 'link') else ''
+                        link
                     ))
                     if cursor.rowcount == 0:
                         toplam_duplicate += 1
@@ -316,6 +347,11 @@ Ozet icinde asla tirnak isareti kullanma.
                 except Exception as db_err:
                     print(f"  -> DB hatası: {db_err}")
                     conn.rollback()
+
+                # Skor 4+ ise Telegram bildirimi gönder
+                if skor >= 4:
+                    send_telegram_alert(baslik, sirket['isim'], skor, link)
+                    print(f"  🚨 KRİTİK HABER — Telegram bildirimi gönderildi!")
 
                 sirket_haber_sayisi += 1
                 toplam_haber += 1

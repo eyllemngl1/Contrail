@@ -1,0 +1,23 @@
+import os
+import requests
+from dotenv import load_dotenv
+
+# .env dosyasını oku
+load_dotenv()
+
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+
+payload = {
+    "chat_id": CHAT_ID,
+    "text": "✈️ 🚨 Contrail Telegram Botu test mesajı! Sistem aktif, çalışmaya devam."
+}
+
+response = requests.post(url, json=payload)
+
+if response.status_code == 200:
+    print("Mesaj başarıyla gönderildi! Telefonuna bak.")
+else:
+    print(f"Hata oluştu: {response.status_code} - {response.text}")

@@ -11,22 +11,6 @@ load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-
-def send_telegram_alert(haber_basligi, sirket, skor, link):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    
-    mesaj = (
-        f"🚨 <b>KRİTİK HAVACILIK HABERİ</b> 🚨\n\n"
-        f"🏢 <b>Şirket:</b> {sirket}\n"
-        f"🔥 <b>Skor:</b> {skor}/10\n"
-        f"📰 <b>Başlık:</b> {haber_basligi}\n\n"
-        f"🔗 <a href='{link}'>Haberi Oku</a>"
-    )
-    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": mesaj, "parse_mode": "HTML"}
-    try:
-        requests.post(url, json=payload)
-    except Exception as e:
-        print(f"Telegram bildirimi gönderilemedi: {e}")
 api_key = os.getenv("GROQ_API_KEY")
 client = Groq(api_key=api_key)
 
@@ -40,18 +24,17 @@ cursor = conn.cursor()
 
 try:
     cursor.execute("ALTER TABLE haberler ADD CONSTRAINT unique_baslik UNIQUE (baslik);")
-    if int(skor) >= 8:
-        send_telegram_alert(baslik, sirket, skor, link)
     conn.commit()
 except Exception:
     conn.rollback()
 
 def send_telegram_alert(baslik, sirket, skor, link):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("  -> Telegram token veya chat_id eksik, bildirim atlandı.")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     mesaj = (
-        f"🚨 <b>KRİTİK HAVACILIK HABERİ</b> 🚨\n\n"
+        f"✈️ <b>CONTRAIL UYARI</b>\n\n"
         f"🏢 <b>Şirket:</b> {sirket}\n"
         f"🔥 <b>Skor:</b> {skor}/10\n"
         f"📰 <b>Başlık:</b> {baslik}\n\n"
@@ -63,9 +46,13 @@ def send_telegram_alert(baslik, sirket, skor, link):
         "parse_mode": "HTML"
     }
     try:
-        requests.post(url, json=payload)
+        r = requests.post(url, json=payload, timeout=10)
+        if r.status_code == 200:
+            print(f"  📱 Telegram bildirimi gönderildi!")
+        else:
+            print(f"  -> Telegram hatası: {r.text}")
     except Exception as e:
-        print(f"Telegram hatası: {e}")
+        print(f"  -> Telegram bağlantı hatası: {e}")
 
 SIRKETLER = [
     {
@@ -208,8 +195,7 @@ HAVACILIK_KELIMELERI = [
     "bilet", "sefer", "iniş", "kalkış", "terminal", "pist",
     "aérien", "aérienne", "aéroport", "aéronef", "compagnie aérienne",
     "vol", "vols", "passager", "passagers", "flotte", "pilote",
-    "cabine", "transporteur", "ligne aérienne", "siège", "fret aérien",
-    "avion",
+    "cabine", "transporteur", "ligne aérienne", "siège", "fret aérien", "avion",
     "fluggesellschaft", "flughafen", "flugzeug", "flug", "flüge",
     "passagier", "passagiere", "luftfahrt", "billigflieger", "fracht",
     "strecke", "kabine", "triebwerk", "eurowings", "swiss air",
@@ -224,8 +210,7 @@ HAVACILIK_KELIMELERI = [
     "aereo", "aerei", "aeroporto", "volo", "voli", "passeggero",
     "compagnia aerea", "flotta", "pilota", "aviazione",
     "etihad", "abu dhabi aviation", "طيران", "مطار", "ركاب",
-    "hangong", "bihaenggi",
-    "hangkong", "feiji", "jichang"
+    "hangong", "bihaenggi", "hangkong", "feiji", "jichang"
 ]
 
 simdi = datetime.now(timezone.utc)
@@ -285,24 +270,26 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
             baslik = haber.title
             link = haber.link if hasattr(haber, 'link') else ''
 
-            pprompt = f"""
-    Sen kıdemli bir havacılık finans ve operasyon analistisin. 
-    Aşağıdaki havacılık haberini okuyup analiz et.
-    Bana SADECE JSON formatında şu bilgileri dön (başka hiçbir açıklama yazma):
-    {{
-        "kategori": "Finans, Operasyon, Kaza/Kriz, Müşteri Deneyimi veya Diğer",
-        "skor": 1 ile 10 arası tamsayı,
-        "ozet": "Türkçe 2-3 cümlelik net ve profesyonel özet"
-    }}
+            prompt = f"""
+Sen kıdemli bir havacılık finans ve operasyon analistisin.
+Asagidaki haber basligini analiz et ve SADECE JSON formatinda don:
+{{
+    "kategori": "Finansal, Filo, Operasyonel veya Jeopolitik",
+    "skor": 7,
+    "ozet": "Türkçe 1-2 cümlelik profesyonel özet. Tirnak isareti kullanma."
+}}
 
-    SKORLAMA KRİTERLERİ (Bu kurallara KESİNLİKLE uyacaksın):
-    1-3 Puan (Düşük): Rutin ve sıradan gelişmeler (Örn: Uçak içi menü değişimi, tekil uçuş rötarları, basit PR kampanyaları).
-    4-6 Puan (Orta): Şirket için olumlu/olumsuz ama yönetilebilir durumlar (Örn: Tek bir yeni rota açılışı, beklenen çeyreklik bilanço sonuçları, küçük sponsorluklar).
-    7-8 Puan (Yüksek): Şirketin finansal yapısını veya operasyonunu ciddi etkileyecek stratejik gelişmeler (Örn: Üst düzey yönetim değişiklikleri/CEO istifası, bölgesel grevler, büyük uçak siparişleri, beklenmedik zarar açıklamaları).
-    9-10 Puan (Kritik): Şirketin veya sektörün kaderini değiştirecek acil krizler (Örn: Ölümcül uçak kazaları, iflas süreçleri, küresel uçuş durdurma kararları (grounding), tüm sistemi çökerten siber saldırılar).
+SKORLAMA:
+1-3: Rutin haberler (menu degisimi, kucuk PR)
+4-6: Onemli ama yonetilebilir (tek rota, bilanço, kucuk sponsorluk)
+7-8: Stratejik etki (CEO degisimi, buyuk siparis, beklenmedik zarar)
+9-10: Kritik kriz (ucak kazasi, iflas, global grounding)
 
-    Haber Metni: {haber_metni}
-    """
+Skor mutlaka 1-10 arasi tam sayi olsun, tirnak icinde degil.
+Ozet icinde asla tirnak isareti kullanma.
+
+Haber: {baslik}
+"""
 
             try:
                 cevap = client.chat.completions.create(
@@ -314,16 +301,19 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
                 ai_verisi = json.loads(cevap.choices[0].message.content)
 
                 try:
-                    skor = int(ai_verisi.get("Skor", 0))
+                    skor = int(ai_verisi.get("skor", ai_verisi.get("Skor", 0)))
                 except (ValueError, TypeError):
                     skor = 0
+
+                kategori = ai_verisi.get("kategori", ai_verisi.get("Kategori", "Bilinmiyor"))
+                ozet = ai_verisi.get("ozet", ai_verisi.get("Ozet", "-"))
 
                 rapor.write(f"ŞİRKET   : {sirket['isim']}\n")
                 rapor.write(f"BAŞLIK   : {baslik}\n")
                 rapor.write(f"TARİH    : {tarih.strftime('%d.%m.%Y %H:%M')}\n")
-                rapor.write(f"KATEGORİ : {ai_verisi.get('Kategori', 'Bilinmiyor')}\n")
+                rapor.write(f"KATEGORİ : {kategori}\n")
                 rapor.write(f"SKOR     : {skor}/10\n")
-                rapor.write(f"ÖZET     : {ai_verisi.get('Ozet', '-')}\n")
+                rapor.write(f"ÖZET     : {ozet}\n")
                 rapor.write("-" * 50 + "\n\n")
 
                 try:
@@ -336,9 +326,9 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
                         sirket['borsa_kodu'],
                         baslik,
                         tarih,
-                        ai_verisi.get('Kategori', 'Bilinmiyor'),
+                        kategori,
                         skor,
-                        ai_verisi.get('Ozet', '-'),
+                        ozet,
                         link
                     ))
                     if cursor.rowcount == 0:
@@ -348,10 +338,9 @@ with open(dosya_adi, "w", encoding="utf-8") as rapor:
                     print(f"  -> DB hatası: {db_err}")
                     conn.rollback()
 
-                # Skor 4+ ise Telegram bildirimi gönder
-                if skor >= 4:
+                # 7+ ise Telegram bildirimi gönder
+                if skor >= 7:
                     send_telegram_alert(baslik, sirket['isim'], skor, link)
-                    print(f"  🚨 KRİTİK HABER — Telegram bildirimi gönderildi!")
 
                 sirket_haber_sayisi += 1
                 toplam_haber += 1

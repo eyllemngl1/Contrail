@@ -3,7 +3,7 @@ import psycopg2
 import schedule
 import time
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,10 +16,8 @@ def db_baglan():
         password="250801"
     )
 
-# Takip edilecek semboller
 SEMBOLLER = {
     "brent":         "BZ=F",
-    "jetfuel":       "BZ=F",
     "eurusd":        "EURUSD=X",
     "usdtry":        "USDTRY=X",
     "dxy":           "DX-Y.NYB",
@@ -41,6 +39,8 @@ def veri_cek_ve_kaydet():
     basarili = 0
     hatali = 0
 
+    brent_fiyat = None
+
     for sembol_adi, ticker_kodu in SEMBOLLER.items():
         try:
             ticker = yf.Ticker(ticker_kodu)
@@ -55,6 +55,10 @@ def veri_cek_ve_kaydet():
             else:
                 degisim = 0
                 yon = "neu"
+
+            # Brent fiyatını sakla — jet yakıtı için kullanacağız
+            if sembol_adi == "brent":
+                brent_fiyat = fiyat
 
             ham = {
                 "fiyat": fiyat,
@@ -82,14 +86,34 @@ def veri_cek_ve_kaydet():
             print(f"  ❌ {sembol_adi}: {e}")
             conn.rollback()
 
+    # Jet yakıtını Brent'ten hesapla (varil → galon, +%18 rafine marjı)
+    if brent_fiyat:
+        try:
+            jet_fiyat = round(brent_fiyat * 0.033 * 1.18, 4)
+            cursor.execute("""
+                INSERT INTO market_data (sembol, fiyat, degisim_yuzde, degisim_yon, ham_veri, kaynak)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (
+                "jetfuel",
+                jet_fiyat,
+                0,
+                "neu",
+                json.dumps({"hesaplama": "brent * 0.033 * 1.18", "brent": brent_fiyat}),
+                "calculated"
+            ))
+            conn.commit()
+            print(f"  ✅ jetfuel (hesaplanan): {jet_fiyat:.4f}")
+            basarili += 1
+        except Exception as e:
+            print(f"  ❌ jetfuel hesaplama hatası: {e}")
+            conn.rollback()
+
     cursor.close()
     conn.close()
     print(f"[Tamamlandı] {basarili} başarılı, {hatali} hatalı")
 
-# Başlangıçta bir kere çalıştır
 veri_cek_ve_kaydet()
 
-# Her 5 dakikada bir çalıştır
 schedule.every(5).minutes.do(veri_cek_ve_kaydet)
 
 print("\nPiyasa veri servisi aktif — her 5 dakikada güncelleniyor.")

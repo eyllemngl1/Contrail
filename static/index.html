@@ -1,46 +1,1642 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contrail - Havacılık İstihbarat</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .haber-karti { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .kritik { border-left: 5px solid #e74c3c; }
-        .skor { font-weight: bold; color: #d35400; }
-        a { color: #2980b9; text-decoration: none; font-weight: bold; }
-        a:hover { text-decoration: underline; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONTRAIL · Aviation Intelligence Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #090e16;
+    --surface:   #111720;
+    --surface2:  #181f2c;
+    --surface3:  #1d2535;
+    --border:    #232d3f;
+    --border2:   #2d3a50;
+    --text:      #e8eef5;
+    --text2:     #b0bac8;
+    --muted:     #6a7a90;
+    --accent:    #2272e8;
+    --accent2:   #1a5bbf;
+    --green:     #34c768;
+    --green-dim: #1a3d2a;
+    --red:       #e84343;
+    --red-dim:   #3a1515;
+    --yellow:    #e0a020;
+    --yellow-dim:#2e2208;
+    --purple:    #9d6ef5;
+    --purple-dim:#1e1438;
+    --cyan:      #28bfcf;
+    --orange:    #e07a2e;
+    --font:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.45;
+    min-height: 100vh;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     TOPBAR
+  ════════════════════════════════════════════════════════════ */
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 44px;
+    background: #060a10;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+  .logo-mark {
+    color: var(--cyan);
+    font-size: 18px;
+    font-weight: 800;
+    margin-right: 6px;
+    line-height: 1;
+  }
+  /* CONTRAIL: CON gri, TRAIL cyan — büyük harfle, text-transform yok */
+  .logo-con  { font-size: 15px; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; }
+  .logo-trail{ font-size: 15px; font-weight: 700; color: var(--cyan);  letter-spacing: 0.04em; }
+
+  .topbar-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .topbar-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .topbar-pill .live-dot {
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+  }
+  .topbar-menu {
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    letter-spacing: 2px;
+    padding: 4px;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     KPI STRIP
+  ════════════════════════════════════════════════════════════ */
+  #kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .kpi-card {
+    background: var(--surface);
+    padding: 11px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: default;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .kpi-card:hover { background: var(--surface2); }
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: transparent;
+    transition: background 0.15s;
+  }
+  .kpi-card:hover::after { background: var(--accent); }
+  .kpi-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .kpi-label .help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px; height: 12px;
+    border: 1px solid var(--border2);
+    border-radius: 50%;
+    font-size: 8px;
+    color: var(--muted);
+    cursor: help;
+    position: relative;
+  }
+  .kpi-label .help:hover::after {
+    content: attr(title);
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a2235;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text2);
+    width: 220px;
+    z-index: 999;
+    line-height: 1.5;
+    text-transform: none;
+    letter-spacing: 0;
+    pointer-events: none;
+    white-space: normal;
+  }
+  .kpi-row { display: flex; align-items: baseline; gap: 8px; }
+  .kpi-value {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+  }
+  .kpi-change {
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+  .neu { color: var(--muted); }
+
+  /* ════════════════════════════════════════════════════════════
+     MAIN WRAPPER
+  ════════════════════════════════════════════════════════════ */
+  #main-wrapper {
+    padding: 14px 20px;
+    max-width: 1440px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     INTELLIGENCE BRIEF
+  ════════════════════════════════════════════════════════════ */
+  #intel-brief {
+    background: linear-gradient(90deg, #0a1829 0%, #0d1420 100%);
+    border: 1px solid var(--accent2);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 13px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .brief-icon {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    background: rgba(34,114,232,0.15);
+    border: 1px solid rgba(34,114,232,0.3);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    margin-top: 1px;
+  }
+  .brief-body { flex: 1; }
+  .brief-title {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin-bottom: 5px;
+  }
+  /* CONTRAIL yazım notu: sabit büyük harf metni olarak yazılır,
+     text-transform kullanılmaz — büyük I sorunu önlenir */
+  #intel-brief p {
+    font-size: 12.5px;
+    color: var(--text2);
+    line-height: 1.65;
+  }
+  .brief-ts {
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    padding-top: 2px;
+    white-space: nowrap;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     CONTRAIL PREDICTIVE ALERTS
+  ════════════════════════════════════════════════════════════ */
+  #predictive-alerts {
+    border-radius: 8px;
+    border: 1px solid #3a2468;
+    background: linear-gradient(135deg, #0e0a1c 0%, #0c1020 100%);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .pa-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .pa-title-group { display: flex; align-items: center; gap: 8px; }
+  .pa-title {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--purple);
+  }
+  .pa-model-badge {
+    font-size: 9px;
+    font-weight: 600;
+    color: #6a4ea8;
+    background: #1a1030;
+    border: 1px solid #2e1e50;
+    border-radius: 3px;
+    padding: 1px 6px;
+    letter-spacing: 0.03em;
+  }
+  .pa-last-updated {
+    font-size: 10px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  /* Status line — default (no crisis) */
+  .pa-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    background: rgba(34,114,232,0.06);
+    border: 1px solid rgba(34,114,232,0.12);
+    border-radius: 6px;
+    margin-bottom: 2px;
+  }
+  .pa-status-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .pa-status-text {
+    font-size: 11.5px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .pa-status-text strong { color: var(--text); font-weight: 600; }
+  /* Alert items (JS injection) */
+  .pa-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px solid #1a1230;
+    animation: pa-slide-in 0.35s ease;
+  }
+  .pa-item:first-of-type { border-top: none; }
+  @keyframes pa-slide-in {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .pa-item-icon {
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    border-radius: 4px;
+    background: var(--purple-dim);
+    border: 1px solid #3a2468;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    margin-top: 1px;
+  }
+  .pa-item-content { flex: 1; }
+  .pa-item-text { font-size: 11.5px; color: #c4b5e0; line-height: 1.45; margin-bottom: 2px; }
+  .pa-item-meta { font-size: 10px; color: #6a4ea8; font-variant-numeric: tabular-nums; }
+  .pa-item-conf { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--purple); font-variant-numeric: tabular-nums; }
+
+  /* ════════════════════════════════════════════════════════════
+     FILTER TABS
+  ════════════════════════════════════════════════════════════ */
+  #filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+  }
+  .filter-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    margin-right: 4px;
+  }
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font);
+    letter-spacing: 0.02em;
+  }
+  .tab-btn:hover { border-color: var(--accent); color: var(--text); background: var(--surface2); }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  /* ════════════════════════════════════════════════════════════
+     CONTENT GRID (65 / 35)
+  ════════════════════════════════════════════════════════════ */
+  #content-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 12px;
+    align-items: start;
+  }
+  #left-col  { display: flex; flex-direction: column; gap: 12px; }
+  #right-col { display: flex; flex-direction: column; gap: 12px; }
+
+  /* ════════════════════════════════════════════════════════════
+     SHARED SECTION STYLES
+  ════════════════════════════════════════════════════════════ */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .section-label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .section-meta { font-size: 10px; color: var(--muted); }
+
+  /* ════════════════════════════════════════════════════════════
+     CARRIER RADAR
+  ════════════════════════════════════════════════════════════ */
+  #carrier-radar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .region-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+  .region-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 11px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .region-btn:hover  { border-color: var(--border2); color: var(--text); }
+  .region-btn.active { background: var(--surface3); border-color: var(--border2); color: var(--text); font-weight: 600; }
+
+  .carrier-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .carrier-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .carrier-card:hover { border-color: var(--border2); background: var(--surface3); }
+  .carrier-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .carrier-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .carrier-ticker { font-size: 10px; color: var(--muted); }
+  .carrier-price { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .carrier-change { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+  .carrier-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .carrier-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+  .carrier-bottom { display: flex; justify-content: space-between; align-items: center; }
+  .carrier-meta { font-size: 10px; color: var(--muted); }
+  .vol-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 3px; }
+  .vol-low  { background: rgba(52,199,104,0.1);  color: var(--green);  border: 1px solid rgba(52,199,104,0.2); }
+  .vol-mid  { background: rgba(224,160,32,0.1);  color: var(--yellow); border: 1px solid rgba(224,160,32,0.2); }
+  .vol-high { background: rgba(232,67,67,0.1);   color: var(--red);    border: 1px solid rgba(232,67,67,0.2);  }
+
+  /* ════════════════════════════════════════════════════════════
+     TOP MOVERS
+  ════════════════════════════════════════════════════════════ */
+  #top-movers {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .mover-item {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    gap: 10px;
+    align-items: start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .mover-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .mover-item:first-child { padding-top: 0; }
+  .mover-rank {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--border2);
+    padding-top: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mover-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .mover-ticker { color: var(--muted); font-weight: 400; font-size: 10px; }
+  .mover-desc { font-size: 11px; color: var(--text2); line-height: 1.5; }
+  .mover-pct {
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    padding-top: 1px;
+    white-space: nowrap;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     SIGNAL FEED
+  ════════════════════════════════════════════════════════════ */
+  #signal-feed {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .signal-card {
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .signal-card:last-of-type { border-bottom: none; }
+  .signal-card:first-of-type { padding-top: 0; }
+  .signal-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .signal-tags { display: flex; gap: 5px; align-items: center; }
+  .signal-score {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px 6px;
+  }
+  .signal-headline { font-size: 12.5px; font-weight: 600; color: var(--text); margin-bottom: 5px; line-height: 1.4; }
+  .signal-body { font-size: 11px; color: var(--text2); line-height: 1.55; }
+  .view-all-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px;
+    color: var(--accent);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font);
+    letter-spacing: 0.02em;
+  }
+  .view-all-btn:hover { background: var(--surface3); border-color: var(--accent2); }
+
+  /* ════════════════════════════════════════════════════════════
+     BADGE SYSTEM
+  ════════════════════════════════════════════════════════════ */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+  .badge-airline   { background: rgba(34,114,232,0.12); color: #6aabff; border: 1px solid rgba(34,114,232,0.2); }
+  .badge-op        { background: rgba(52,199,104,0.1);  color: var(--green);  border: 1px solid rgba(52,199,104,0.2); }
+  .badge-safety    { background: rgba(232,67,67,0.1);   color: var(--red);    border: 1px solid rgba(232,67,67,0.2);  }
+  .badge-reg       { background: rgba(157,110,245,0.1); color: var(--purple); border: 1px solid rgba(157,110,245,0.2);}
+  .badge-fin       { background: rgba(224,160,32,0.1);  color: var(--yellow); border: 1px solid rgba(224,160,32,0.2); }
+
+  /* ════════════════════════════════════════════════════════════
+     MAYDAY ALERTS
+  ════════════════════════════════════════════════════════════ */
+  #mayday-alerts {
+    background: linear-gradient(135deg, #160808 0%, #100a0a 100%);
+    border: 1px solid rgba(232,67,67,0.4);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .mayday-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 11px;
+  }
+  .mayday-left { display: flex; align-items: center; gap: 8px; }
+  .mayday-badge {
+    background: var(--red);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    padding: 3px 7px;
+    border-radius: 3px;
+  }
+  .mayday-title {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--red);
+  }
+  .mayday-timeframe { font-size: 10px; color: var(--muted); }
+  .alert-item {
+    padding: 9px 0;
+    border-top: 1px solid rgba(232,67,67,0.1);
+  }
+  .alert-item:first-of-type { border-top: none; padding-top: 0; }
+  .alert-top { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 5px; }
+  .alert-headline { font-size: 11.5px; font-weight: 500; color: var(--text); line-height: 1.45; }
+  .alert-meta { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+  /* ════════════════════════════════════════════════════════════
+     LCC VS FSC SENTIMENT
+  ════════════════════════════════════════════════════════════ */
+  #lcc-fsc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .legend {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 11px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot-fsc { background: var(--accent); }
+  .dot-lcc { background: var(--orange); }
+  .sentiment-row {
+    display: grid;
+    grid-template-columns: 62px 1fr 30px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .sentiment-row:last-child { margin-bottom: 0; }
+  .sentiment-airline { font-size: 11px; font-weight: 600; color: var(--text); }
+  .sentiment-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .sentiment-fill { height: 100%; border-radius: 2px; }
+  .sentiment-score { font-size: 11px; font-weight: 700; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ════════════════════════════════════════════════════════════
+     GLOBAL TRAFFIC HEATMAP
+  ════════════════════════════════════════════════════════════ */
+  #traffic-heatmap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .hm-cell {
+    border-radius: 5px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .hm-red    { background: rgba(232,67,67,0.12);  border: 1px solid rgba(232,67,67,0.2);  }
+  .hm-yellow { background: rgba(224,160,32,0.1);  border: 1px solid rgba(224,160,32,0.18); }
+  .hm-green  { background: rgba(52,199,104,0.08); border: 1px solid rgba(52,199,104,0.15); }
+  .hm-teal   { background: rgba(40,191,207,0.08); border: 1px solid rgba(40,191,207,0.15); }
+  .hm-blue   { background: rgba(34,114,232,0.08); border: 1px solid rgba(34,114,232,0.15); }
+  .hm-region { font-size: 8.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; line-height: 1.3; }
+  .hm-count  { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hm-red    .hm-count { color: #f87171; }
+  .hm-yellow .hm-count { color: #fbbf24; }
+  .hm-green  .hm-count { color: #6ee7b7; }
+  .hm-teal   .hm-count { color: #2dd4bf; }
+  .hm-blue   .hm-count { color: #60a5fa; }
+  .heatmap-stats { display: flex; flex-direction: column; gap: 5px; }
+  .heatmap-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+  }
+  .heatmap-stat .sl { color: var(--text2); }
+  .heatmap-stat .sv { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .sv-danger { color: var(--red); }
+  .sv-warn   { color: var(--yellow); }
+
+  /* ════════════════════════════════════════════════════════════
+     HORIZON
+  ════════════════════════════════════════════════════════════ */
+  #horizon {
+    background: linear-gradient(135deg, #090714 0%, #0a0d18 100%);
+    border: 1px solid #1e1c38;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .horizon-title {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: var(--purple);
+    margin-bottom: 11px;
+  }
+  .horizon-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid #161228;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .horizon-item:hover { opacity: 0.8; }
+  .horizon-item:first-of-type { border-top: none; padding-top: 0; }
+  .hz-tag {
+    flex-shrink: 0;
+    font-size: 8.5px;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    margin-top: 1px;
+  }
+  .hztag-evtol { background: rgba(34,114,232,0.15); color: #60a5fa; border: 1px solid rgba(34,114,232,0.25); }
+  .hztag-h2   { background: rgba(52,199,104,0.12); color: #6ee7b7; border: 1px solid rgba(52,199,104,0.2); }
+  .hztag-ss   { background: rgba(157,110,245,0.12); color: var(--purple); border: 1px solid rgba(157,110,245,0.22); }
+  .horizon-text { font-size: 11.5px; color: var(--text2); line-height: 1.45; }
+
+  /* ════════════════════════════════════════════════════════════
+     BOTTOM GRID — compact, equal columns
+  ════════════════════════════════════════════════════════════ */
+  #bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  #brand-experience,
+  #airline-rankings {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  /* BRAND &amp; EXPERIENCE */
+  .brand-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .brand-item:first-child { padding-top: 0; }
+  .brand-tag {
+    flex-shrink: 0;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 2px;
+    letter-spacing: 0.03em;
+  }
+  .btag-lounge  { background: rgba(34,114,232,0.12);  color: #6aabff;       border: 1px solid rgba(34,114,232,0.2); }
+  .btag-cabin   { background: rgba(52,199,104,0.1);   color: var(--green);  border: 1px solid rgba(52,199,104,0.18); }
+  .btag-sponsor { background: rgba(157,110,245,0.12); color: var(--purple); border: 1px solid rgba(157,110,245,0.22); }
+  .btag-fnb     { background: rgba(224,160,32,0.1);   color: var(--yellow); border: 1px solid rgba(224,160,32,0.18); }
+  .brand-text { font-size: 11.5px; color: var(--text2); line-height: 1.5; }
+
+  /* AIRLINE RANKINGS */
+  .ranking-item {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .ranking-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .ranking-item:first-child { padding-top: 0; }
+  .rank-num { font-size: 11px; font-weight: 700; color: var(--border2); font-variant-numeric: tabular-nums; }
+  .rank-airline { font-size: 12px; font-weight: 600; color: var(--text); }
+  .rank-metric { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .rank-value { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .rv-green  { color: var(--green); }
+  .rv-cyan   { color: var(--cyan); }
+  .rv-yellow { color: var(--yellow); }
+  .rv-purple { color: var(--purple); }
+  .rv-orange { color: var(--orange); }
+
+  /* ════════════════════════════════════════════════════════════
+     FOOTER
+  ════════════════════════════════════════════════════════════ */
+  #footer {
+    border-top: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  #footer .footer-brand { font-weight: 700; color: var(--text2); letter-spacing: 0.05em; }
+  #footer .footer-brand span { color: var(--cyan); }
+</style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>✈️ Contrail - Son 24 Saat</h1>
-    </div>
+<!-- ══════════════════════════════════════════════════════════
+     TOPBAR
+══════════════════════════════════════════════════════════ -->
+<header id="topbar">
+  <a class="logo" href="#">
+    <span class="logo-mark">+</span>
+    <span class="logo-con">CON</span><span class="logo-trail">TRAIL</span>
+  </a>
 
-    <div id="news-container">
+  <div class="topbar-center">AVIATION INTELLIGENCE TERMINAL</div>
+
+  <div class="topbar-right">
+    <div class="topbar-pill">
+      <span class="live-dot"></span>
+      <span id="live-clock">27.06.2026 · 17:42 UTC</span>
+    </div>
+    <span class="topbar-menu">···</span>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+     KPI STRIP
+══════════════════════════════════════════════════════════ -->
+<section id="kpi-strip">
+  <div class="kpi-card" id="kpi-brent" data-endpoint="/api/market/brent" data-refresh-interval="30">
+    <div class="kpi-label">Brent crude <span class="help" title="Uluslararası ham petrol referans fiyatı ($/varil). Jet yakıtının ana hammaddesidir — yükselirse havayolu yakıt maliyetleri artar ve marjlar daralır. Kritik eşik: $100+">?</span></div>
+    <div class="kpi-row">
+      <div class="kpi-value" data-field="price">$84.20</div>
+      <div class="kpi-change pos" data-field="change" data-field-class="change_class">+1.4%</div>
+    </div>
+  </div>
+  <div class="kpi-card" id="kpi-jetfuel" data-endpoint="/api/market/jetfuel" data-refresh-interval="30">
+    <div class="kpi-label">Jet fuel <span class="help" title="Havacılık yakıtının (Jet-A1) anlık spot fiyatı ($/galon). Havayollarının en büyük gider kalemi olup toplam maliyetlerin %20-30'unu oluşturur. Bazı şirketler 'fuel hedge' ile fiyatı önceden sabitler.">?</span></div>
+    <div class="kpi-row">
+      <div class="kpi-value" data-field="price">$2.91</div>
+      <div class="kpi-change neg" data-field="change" data-field-class="change_class">-0.8%</div>
+    </div>
+  </div>
+  <div class="kpi-card" id="kpi-eurusd" data-endpoint="/api/market/eurusd" data-refresh-interval="30">
+    <div class="kpi-label">EUR/USD <span class="help" title="Euro/Dolar paritesi. Avrupa'da üslü havayolları (Lufthansa, Air France-KLM, Ryanair) için kritik — Euro güçlenirse bu havayollarının dolar cinsinden gelirleri artar.">?</span></div>
+    <div class="kpi-row">
+      <div class="kpi-value" data-field="price">1.0842</div>
+      <div class="kpi-change pos" data-field="change" data-field-class="change_class">+0.2%</div>
+    </div>
+  </div>
+  <div class="kpi-card" id="kpi-usdtry" data-endpoint="/api/market/usdtry" data-refresh-interval="30">
+    <div class="kpi-label">USD/TRY <span class="help" title="Dolar/Türk Lirası kuru. Turkish Airlines (THYAO) için kritik — TL değer kaybederse TL bazlı maliyetler görece azalır ancak dolar cinsinden borç yükü artar.">?</span></div>
+    <div class="kpi-row">
+      <div class="kpi-value" data-field="price">38.41</div>
+      <div class="kpi-change neg" data-field="change" data-field-class="change_class">-0.3%</div>
+    </div>
+  </div>
+  <div class="kpi-card" id="kpi-usdstrength" data-endpoint="/api/market/dxy" data-refresh-interval="30">
+    <div class="kpi-label">DXY · Dollar Index <span class="help" title="Doların Euro, Yen, Pound gibi 6 büyük para birimine karşı gücünü ölçer (0–130). Yükselirse, dolar cinsinden borcu olan ve uluslararası gelirleri yerel para birimiyle hesaplayan havayolları için maliyet baskısı artar.">?</span></div>
+    <div class="kpi-row">
+      <div class="kpi-value" data-field="price">104.3</div>
+      <div class="kpi-change neg" data-field="change" data-field-class="change_class">-0.3%</div>
+    </div>
+  </div>
+  <div class="kpi-card" id="kpi-airlineindex" data-endpoint="/api/market/airline-index" data-refresh-interval="30">
+    <div class="kpi-label">NYSE Arca Airlines <span class="help" title="NYSE Arca Airline Index (XAL) — ABD borsalarında işlem gören büyük havayollarının ağırlıklı ortalaması. Sektörün genel borsadaki yönünü gösterir; yükseliyorsa yatırımcı güveni artıyor demektir.">?</span></div>
+    <div class="kpi-row">
+      <div class="kpi-value pos" data-field="price">+0.9%</div>
+      <div class="kpi-change neu" data-field="change" data-field-class="change_class">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     MAIN WRAPPER
+══════════════════════════════════════════════════════════ -->
+<div id="main-wrapper">
+
+  <!-- INTELLIGENCE BRIEF -->
+  <div id="intel-brief" data-endpoint="/api/intel/brief" data-refresh-interval="60">
+    <div class="brief-icon">◈</div>
+    <div class="brief-body">
+      <div class="brief-title">CONTRAIL INTELLIGENCE BRIEF</div>
+      <p id="intel-brief-text" data-field="summary">Sektörde bugün operasyonel odak hakimdir. Ryanair'in aile koltuk politikası değişikliği yüksek kamuoyu etkisi yaratırken Etihad'ın ücret esnekliği kararı müşteri memnuniyetine pozitif katkı sağlayabilir. Jet yakıt fiyatlarındaki hafif gerileme maliyet baskısını azaltıyor; hedge pozisyonu güçlü FSC taşıyıcılar avantajlı konumda. ANA operasyonel aksaklık yaşarken Delta ağ optimizasyonunu sürdürüyor.</p>
+    </div>
+    <div class="brief-ts" id="brief-ts">27.06.2026 · 17:30 UTC</div>
+  </div>
+
+  <!-- CONTRAIL PREDICTIVE ALERTS
+       APScheduler / WebSocket push hedefi.
+       JS API: ContrailAPI.pushPredictiveAlert({text, confidence, source, ts})
+       Kriz yoksa default "all clear" durumu gösterilir.
+  -->
+  <div id="predictive-alerts" data-endpoint="/api/alerts/predictive" aria-live="polite">
+    <div class="pa-header">
+      <div class="pa-title-group">
+        <span class="pa-title">CONTRAIL PREDICTIVE ALERTS</span>
+        <span class="pa-model-badge">contrail-v2</span>
+      </div>
+      <span class="pa-last-updated" id="pa-last-updated">Updated: 17:30 UTC</span>
+    </div>
+    <!-- Default: kriz yok durumu -->
+    <div class="pa-status" id="pa-default-status">
+      <div class="pa-status-icon">✓</div>
+      <div class="pa-status-text">
+        <strong>No critical risk detected.</strong> CONTRAIL predictive model has not identified any operational, financial or geopolitical crisis signal for the next 6 hours. All monitored carriers are within normal operating parameters. Status: <span style="color:var(--green);font-weight:600">NOMINAL</span>
+      </div>
+    </div>
+    <!-- JS tarafından .pa-item öğeleri buraya eklenir; eklenince pa-default-status gizlenir -->
+  </div>
+
+  <!-- FILTER TABS -->
+  <div id="filter-tabs">
+    <span class="filter-label">View</span>
+    <button class="tab-btn active" data-tab="all">All</button>
+    <button class="tab-btn" data-tab="fleet">Fleet</button>
+    <button class="tab-btn" data-tab="financial">Financial</button>
+    <button class="tab-btn" data-tab="operations">Operations</button>
+    <button class="tab-btn" data-tab="geopolitical">Geopolitical</button>
+    <button class="tab-btn" data-tab="lcc">LCC</button>
+    <button class="tab-btn" data-tab="fsc">FSC</button>
+    <button class="tab-btn" data-tab="horizon">Horizon</button>
+  </div>
+
+  <!-- CONTENT GRID -->
+  <div id="content-grid">
+
+    <!-- ════ LEFT COLUMN ════ -->
+    <div id="left-col">
+
+      <!-- CARRIER RADAR -->
+      <section id="carrier-radar">
+        <div class="section-header">
+          <span class="section-label">CARRIER RADAR</span>
+          <span class="section-meta">Real-time · 15s refresh</span>
+        </div>
+        <div class="region-tabs">
+          <button class="region-btn active" data-region="north-america">North America</button>
+          <button class="region-btn" data-region="europe">Europe</button>
+          <button class="region-btn" data-region="asia-pacific">Asia-Pacific</button>
+          <button class="region-btn" data-region="middle-east">Middle East</button>
+          <button class="region-btn" data-region="south-america">Latin America</button>
+        </div>
+        <div class="carrier-cards">
+          <div class="carrier-card" id="carrier-dal"
+               data-endpoint="/api/carriers/DAL" data-ticker="DAL" data-exchange="NYSE">
+            <div class="carrier-top">
+              <div>
+                <div class="carrier-name">Delta Air Lines</div>
+                <div class="carrier-ticker" data-field="ticker_label">NYSE: DAL</div>
+              </div>
+              <div>
+                <div class="carrier-price pos" data-field="price" data-field-class="change_class">$52.40</div>
+                <div class="carrier-change pos" data-field="change" data-field-class="change_class">+1.8%</div>
+              </div>
+            </div>
+            <div class="carrier-bar">
+              <div class="carrier-bar-fill" data-field="volume_bar_width"
+                   style="background:var(--green);width:35%"></div>
+            </div>
+            <div class="carrier-bottom">
+              <div class="carrier-meta" data-field="news_count">4 news · 24h</div>
+              <span class="vol-badge vol-low" data-field="vol_label" data-field-class="vol_class">Low vol</span>
+            </div>
+          </div>
+
+          <div class="carrier-card" id="carrier-ual"
+               data-endpoint="/api/carriers/UAL" data-ticker="UAL" data-exchange="NASDAQ">
+            <div class="carrier-top">
+              <div>
+                <div class="carrier-name">United Airlines</div>
+                <div class="carrier-ticker" data-field="ticker_label">NASDAQ: UAL</div>
+              </div>
+              <div>
+                <div class="carrier-price pos" data-field="price" data-field-class="change_class">$77.10</div>
+                <div class="carrier-change pos" data-field="change" data-field-class="change_class">+0.6%</div>
+              </div>
+            </div>
+            <div class="carrier-bar">
+              <div class="carrier-bar-fill" data-field="volume_bar_width"
+                   style="background:var(--green);width:55%"></div>
+            </div>
+            <div class="carrier-bottom">
+              <div class="carrier-meta" data-field="news_count">5 news · 24h</div>
+              <span class="vol-badge vol-mid" data-field="vol_label" data-field-class="vol_class">Mid vol</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOP MOVERS -->
+      <section id="top-movers">
+        <div class="section-header">
+          <span class="section-label">RUNWAY GAINERS</span>
+          <span class="section-meta">Top 3 · 24H</span>
         </div>
 
-    <script>
-        fetch('/son24saat')
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('news-container');
-                // Bak, aradığın JavaScript kodu tam olarak burası!
-                data.haberler.forEach(haber => {
-                    container.innerHTML += `
-                        <div class="haber-karti ${haber.skor >= 8 ? 'kritik' : ''}">
-                            <h3>${haber.sirket} - ${haber.baslik}</h3>
-                            <span class="skor">Skor: ${haber.skor}/10</span>
-                            <p>${haber.ozet}</p>
-                            <a href="${haber.link}" target="_blank">Haberi Oku</a>
-                        </div>
-                    `;
-                });
-            })
-            .catch(error => console.error('Haberler çekilirken hata oluştu:', error));
-    </script>
+        <div class="mover-item" id="mover-1"
+             data-endpoint="/api/movers/C6L" data-ticker="C6L" data-rank="1">
+          <div class="mover-rank" data-field="rank">1</div>
+          <div>
+            <div class="mover-name">
+              Singapore Airlines <span class="mover-ticker" data-field="ticker_label">SGX: C6L</span>
+            </div>
+            <div class="mover-desc" data-field="headline">Yeni premium kabin tanıtımı ve Asya güzergahlarında %12 kapasite artışı duyuruldu</div>
+          </div>
+          <div class="mover-pct pos" data-field="change_pct" data-field-class="change_class">+3.2%</div>
+        </div>
+
+        <div class="mover-item" id="mover-2"
+             data-endpoint="/api/movers/DAL" data-ticker="DAL" data-rank="2">
+          <div class="mover-rank" data-field="rank">2</div>
+          <div>
+            <div class="mover-name">
+              Delta Air Lines <span class="mover-ticker" data-field="ticker_label">NYSE: DAL</span>
+            </div>
+            <div class="mover-desc" data-field="headline">Q2 yolcu doluluk oranı beklentilerin üzerinde açıklandı, load factor %88.4'e yükseldi</div>
+          </div>
+          <div class="mover-pct pos" data-field="change_pct" data-field-class="change_class">+1.8%</div>
+        </div>
+
+        <div class="mover-item" id="mover-3"
+             data-endpoint="/api/movers/RYAAY" data-ticker="RYAAY" data-rank="3">
+          <div class="mover-rank" data-field="rank">3</div>
+          <div>
+            <div class="mover-name">
+              Ryanair <span class="mover-ticker" data-field="ticker_label">NASDAQ: RYAAY</span>
+            </div>
+            <div class="mover-desc" data-field="headline">Aile koltuk ücreti kaldırıldı, müşteri memnuniyet beklentisi güçlendi; baskı kısa vadede gelir marjını daraltabilir</div>
+          </div>
+          <div class="mover-pct neg" data-field="change_pct" data-field-class="change_class">-2.1%</div>
+        </div>
+      </section>
+
+      <!-- SIGNAL FEED -->
+      <section id="signal-feed">
+        <div class="section-header">
+          <span class="section-label">SIGNAL FEED</span>
+          <span class="section-meta">3 active · live</span>
+        </div>
+
+        <div class="signal-card" id="signal-ryanair"
+             data-signal-id="sig-ryanair-001" data-endpoint="/api/signals/sig-ryanair-001"
+             data-carrier="ryanair" data-category="operational">
+          <div class="signal-top">
+            <div class="signal-tags">
+              <span class="badge badge-airline" data-field="carrier_name">Ryanair</span>
+              <span class="badge badge-op" data-field="category_label">Operational</span>
+            </div>
+            <span class="signal-score" data-field="score">9/10</span>
+          </div>
+          <div class="signal-headline" data-field="headline">Ryanair allows parents to sit with children for free after regulator pressure</div>
+          <div class="signal-body" data-field="summary">Ryanair, AB düzenleyicilerinin baskısı sonucunda aile koltuk ücretini kaldırdı. Kısa vadede gelir kaybı yaratabilir ancak uzun vadede marka algısını güçlendirebilir.</div>
+        </div>
+
+        <div class="signal-card" id="signal-etihad"
+             data-signal-id="sig-etihad-001" data-endpoint="/api/signals/sig-etihad-001"
+             data-carrier="etihad" data-category="operational">
+          <div class="signal-top">
+            <div class="signal-tags">
+              <span class="badge badge-airline" data-field="carrier_name">Etihad</span>
+              <span class="badge badge-op" data-field="category_label">Operational</span>
+            </div>
+            <span class="signal-score" data-field="score">8/10</span>
+          </div>
+          <div class="signal-headline" data-field="headline">Etihad waives flight change fees until March 2027</div>
+          <div class="signal-body" data-field="summary">Etihad uçuş değişiklik ücretlerini Mart 2027'ye kadar kaldırıyor; esnek seyahat politikası rekabetçi avantaj sağlayabilir.</div>
+        </div>
+
+        <div class="signal-card" id="signal-delta"
+             data-signal-id="sig-delta-001" data-endpoint="/api/signals/sig-delta-001"
+             data-carrier="delta" data-category="operations">
+          <div class="signal-top">
+            <div class="signal-tags">
+              <span class="badge badge-airline" data-field="carrier_name">Delta</span>
+              <span class="badge badge-fin" data-field="category_label">Operations</span>
+            </div>
+            <span class="signal-score" data-field="score">6/10</span>
+          </div>
+          <div class="signal-headline" data-field="headline">Delta cuts 2 Austin routes, adds new California flight</div>
+          <div class="signal-body" data-field="summary">Delta ağ optimizasyonunun parçası olarak iki Austin rotasını kesiyor ve yeni bir California uçuşu ekliyor.</div>
+        </div>
+
+        <button class="view-all-btn" id="view-all-signals">
+          View all signals and archive →
+        </button>
+      </section>
+
+      <!-- BOTTOM ROW: Brand + Rankings yan yana -->
+      <div id="bottom-grid">
+
+        <section id="brand-experience">
+          <div class="section-header">
+            <span class="section-label">BRAND &amp; EXPERIENCE</span>
+          </div>
+          <div class="brand-item" id="brand-lounge">
+            <span class="brand-tag btag-lounge">Lounge</span>
+            <div class="brand-text">Delta'nın Atlanta Concourse D'deki yeni Delta One Lounge açılışı duyuruldu</div>
+          </div>
+          <div class="brand-item" id="brand-cabin">
+            <span class="brand-tag btag-cabin">Cabin</span>
+            <div class="brand-text">Singapore Airlines yeni Business Class tam yatar koltuk tasarımını tanıttı</div>
+          </div>
+          <div class="brand-item" id="brand-sponsor">
+            <span class="brand-tag btag-sponsor">Sponsor</span>
+            <div class="brand-text">Turkish Airlines UEFA Şampiyonlar Ligi sponsorluğunu 2027'ye uzattı</div>
+          </div>
+          <div class="brand-item" id="brand-fnb">
+            <span class="brand-tag btag-fnb">F&amp;B</span>
+            <div class="brand-text">Lufthansa ve Michelin şefi ortak ikram programı başlattı</div>
+          </div>
+        </section>
+
+        <section id="airline-rankings">
+          <div class="section-header">
+            <span class="section-label">AIRLINE RANKINGS</span>
+          </div>
+          <div class="ranking-item" id="rank-1">
+            <div class="rank-num">1</div>
+            <div><div class="rank-airline">Singapore Airlines</div><div class="rank-metric">Most profitable</div></div>
+            <div class="rank-value rv-green">$2.7B</div>
+          </div>
+          <div class="ranking-item" id="rank-2">
+            <div class="rank-num">2</div>
+            <div><div class="rank-airline">Delta Air Lines</div><div class="rank-metric">Load factor</div></div>
+            <div class="rank-value rv-cyan">88.4%</div>
+          </div>
+          <div class="ranking-item" id="rank-3">
+            <div class="rank-num">3</div>
+            <div><div class="rank-airline">ANA All Nippon</div><div class="rank-metric">Youngest fleet</div></div>
+            <div class="rank-value rv-yellow">8.2 yr</div>
+          </div>
+          <div class="ranking-item" id="rank-4">
+            <div class="rank-num">4</div>
+            <div><div class="rank-airline">Ryanair</div><div class="rank-metric">Fastest growth</div></div>
+            <div class="rank-value rv-purple">+18%</div>
+          </div>
+          <div class="ranking-item" id="rank-5">
+            <div class="rank-num">5</div>
+            <div><div class="rank-airline">Etihad Airways</div><div class="rank-metric">Safety score</div></div>
+            <div class="rank-value rv-orange">9.8/10</div>
+          </div>
+        </section>
+
+      </div><!-- /bottom-grid -->
+
+    </div><!-- /left-col -->
+
+    <!-- ════ RIGHT COLUMN ════ -->
+    <div id="right-col">
+
+      <!-- MAYDAY ALERTS -->
+      <section id="mayday-alerts">
+        <div class="mayday-header">
+          <div class="mayday-left">
+            <span class="mayday-badge">MAYDAY</span>
+            <span class="mayday-title">Alerts</span>
+          </div>
+          <span class="mayday-timeframe">· 2H</span>
+        </div>
+
+        <div class="alert-item" id="alert-ana"
+             data-alert-id="alert-ana-001" data-carrier="ana" data-severity="9">
+          <div class="alert-top">
+            <span class="badge badge-airline" data-field="carrier_name">ANA All Nippon</span>
+            <span class="badge badge-op" data-field="category_label">Operational</span>
+          </div>
+          <div class="alert-headline" data-field="headline">İkiz fırtına nedeniyle 100+ uçuş iptal edildi</div>
+          <div class="alert-meta" data-field="meta">Score 9 · 43 min ago</div>
+        </div>
+
+        <div class="alert-item" id="alert-delta"
+             data-alert-id="alert-dal-001" data-carrier="delta" data-severity="8">
+          <div class="alert-top">
+            <span class="badge badge-airline" data-field="carrier_name">Delta Air Lines</span>
+            <span class="badge badge-safety" data-field="category_label">Safety</span>
+          </div>
+          <div class="alert-headline" data-field="headline">Boston Logan'da yakın geçiş olayı; senatörler soruşturma başlattı</div>
+          <div class="alert-meta" data-field="meta">Score 8 · 1h 12min ago</div>
+        </div>
+
+        <div class="alert-item" id="alert-ryanair"
+             data-alert-id="alert-ryaay-001" data-carrier="ryanair" data-severity="8">
+          <div class="alert-top">
+            <span class="badge badge-airline" data-field="carrier_name">Ryanair</span>
+            <span class="badge badge-reg" data-field="category_label">Regulatory</span>
+          </div>
+          <div class="alert-headline" data-field="headline">AB düzenleyicileri aile koltuk ücretini soruşturuyor</div>
+          <div class="alert-meta" data-field="meta">Score 8 · 1h 58min ago</div>
+        </div>
+      </section>
+
+      <!-- LCC VS FSC SENTIMENT -->
+      <section id="lcc-fsc">
+        <div class="section-header">
+          <span class="section-label">LCC vs FSC · AI SENTIMENT INDEX</span>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot dot-fsc"></div>FSC — Full Service Carrier</div>
+          <div class="legend-item"><div class="legend-dot dot-lcc"></div>LCC — Low Cost Carrier</div>
+        </div>
+        <div class="sentiment-row" data-airline="delta" data-score="7.4" data-type="fsc">
+          <div class="sentiment-airline">Delta</div>
+          <div class="sentiment-track"><div class="sentiment-fill" style="width:74%;background:var(--accent)"></div></div>
+          <div class="sentiment-score">7.4</div>
+        </div>
+        <div class="sentiment-row" data-airline="thy" data-score="6.9" data-type="fsc">
+          <div class="sentiment-airline">THY</div>
+          <div class="sentiment-track"><div class="sentiment-fill" style="width:69%;background:var(--accent)"></div></div>
+          <div class="sentiment-score">6.9</div>
+        </div>
+        <div class="sentiment-row" data-airline="lufthansa" data-score="6.5" data-type="fsc">
+          <div class="sentiment-airline">Lufthansa</div>
+          <div class="sentiment-track"><div class="sentiment-fill" style="width:65%;background:var(--accent)"></div></div>
+          <div class="sentiment-score">6.5</div>
+        </div>
+        <div class="sentiment-row" data-airline="ryanair" data-score="7.2" data-type="lcc">
+          <div class="sentiment-airline">Ryanair</div>
+          <div class="sentiment-track"><div class="sentiment-fill" style="width:72%;background:var(--orange)"></div></div>
+          <div class="sentiment-score">7.2</div>
+        </div>
+        <div class="sentiment-row" data-airline="latam" data-score="5.8" data-type="lcc">
+          <div class="sentiment-airline">LATAM</div>
+          <div class="sentiment-track"><div class="sentiment-fill" style="width:58%;background:var(--orange)"></div></div>
+          <div class="sentiment-score">5.8</div>
+        </div>
+      </section>
+
+      <!-- GLOBAL TRAFFIC HEATMAP -->
+      <section id="traffic-heatmap">
+        <div class="section-header">
+          <span class="section-label">GLOBAL TRAFFIC HEATMAP</span>
+        </div>
+        <div class="heatmap-grid">
+          <div class="hm-cell hm-red">
+            <div class="hm-region">North<br>Atlantic</div>
+            <div class="hm-count">2,841</div>
+          </div>
+          <div class="hm-cell hm-yellow">
+            <div class="hm-region">Europe<br>Intra</div>
+            <div class="hm-count">4,120</div>
+          </div>
+          <div class="hm-cell hm-green">
+            <div class="hm-region">Asia-<br>Pacific</div>
+            <div class="hm-count">1,980</div>
+          </div>
+          <div class="hm-cell hm-teal">
+            <div class="hm-region">Middle<br>East</div>
+            <div class="hm-count">892</div>
+          </div>
+          <div class="hm-cell hm-blue">
+            <div class="hm-region">South<br>America</div>
+            <div class="hm-count">441</div>
+          </div>
+          <div class="hm-cell hm-green">
+            <div class="hm-region">Africa</div>
+            <div class="hm-count">218</div>
+          </div>
+        </div>
+        <div class="heatmap-stats">
+          <div class="heatmap-stat">
+            <span class="sl">Top airport: LHR</span>
+            <span class="sv sv-danger">98% capacity</span>
+          </div>
+          <div class="heatmap-stat">
+            <span class="sl">Top airport: DXB</span>
+            <span class="sv sv-danger">96% capacity</span>
+          </div>
+          <div class="heatmap-stat">
+            <span class="sl">Top airspace: UKLV</span>
+            <span class="sv sv-warn">High density</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- HORIZON -->
+      <section id="horizon">
+        <div class="horizon-title">HORIZON — FUTURE OF FLIGHT</div>
+        <div class="horizon-item" id="horizon-evtol">
+          <span class="hz-tag hztag-evtol">eVTOL</span>
+          <div class="horizon-text">Joby Aviation FAA onayına yaklaşıyor, 2026 sonu hedefi</div>
+        </div>
+        <div class="horizon-item" id="horizon-h2">
+          <span class="hz-tag hztag-h2">H2</span>
+          <div class="horizon-text">Airbus ZEROe motor testi Q3'e ertelendi</div>
+        </div>
+        <div class="horizon-item" id="horizon-ss">
+          <span class="hz-tag hztag-ss">Supersonic</span>
+          <div class="horizon-text">Boom XB-1 Mach 1.2'ye ulaştı, XB-2 tasarımı başladı</div>
+        </div>
+      </section>
+
+    </div><!-- /right-col -->
+  </div><!-- /content-grid -->
+
+  <!-- BOTTOM GRID -->
+
+</div><!-- /main-wrapper -->
+
+<footer id="footer">
+  <span class="footer-brand">CON<span>TRAIL</span> · Aviation Intelligence Terminal</span>
+  <span>© 2026 CONTRAIL Technologies · All data for informational purposes only</span>
+  <span id="footer-clock"></span>
+</footer>
+
+<script>
+  /* ═══════════════════════════════════════════════════════════════
+     CONTRAIL FRONTEND API
+     FastAPI entegrasyon katmanı.
+
+     KULLANIM:
+       ContrailAPI.updateField('kpi-brent', 'price', '$85.10');
+       ContrailAPI.updateSection('carrier-dal', { price:'$53.20', change_class:'pos' });
+       ContrailAPI.pushPredictiveAlert({ text:'...', confidence:'87%', source:'contrail-v2', ts:'17:46 UTC' });
+       ContrailAPI.fetchAll();
+  ═══════════════════════════════════════════════════════════════ */
+  const ContrailAPI = (() => {
+    const CHANGE_CLASSES = ['pos', 'neg', 'neu'];
+
+    function setChangeClass(el, cls) {
+      if (!cls) return;
+      el.classList.remove(...CHANGE_CLASSES);
+      el.classList.add(cls);
+    }
+
+    function updateField(sectionId, fieldName, value, changeClass) {
+      const section = document.getElementById(sectionId);
+      if (!section) return;
+      const el = section.querySelector(`[data-field="${fieldName}"]`);
+      if (!el) return;
+      el.textContent = value;
+      if (changeClass) setChangeClass(el, changeClass);
+    }
+
+    function updateSection(sectionId, data) {
+      const section = document.getElementById(sectionId);
+      if (!section) return;
+      section.querySelectorAll('[data-field]').forEach(el => {
+        const field = el.dataset.field;
+        if (data[field] !== undefined) el.textContent = data[field];
+        const classField = el.dataset.fieldClass;
+        if (classField && data[classField]) setChangeClass(el, data[classField]);
+        if (field === 'volume_bar_width' && data[field]) el.style.width = data[field];
+      });
+    }
+
+    async function fetchSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      if (!section) return;
+      const endpoint = section.dataset.endpoint;
+      if (!endpoint) return;
+      try {
+        const res = await fetch(endpoint, { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        updateSection(sectionId, data);
+        document.dispatchEvent(new CustomEvent('contrail:data-updated', { detail: { sectionId, data } }));
+      } catch (err) {
+        console.warn(`[ContrailAPI] fetchSection(${sectionId}) failed:`, err.message);
+      }
+    }
+
+    function fetchAll() {
+      document.querySelectorAll('[data-endpoint]').forEach(el => {
+        if (el.id) fetchSection(el.id);
+      });
+    }
+
+    function pushPredictiveAlert({ text, confidence = '', source = 'contrail-v2', ts = '' }) {
+      const container = document.getElementById('predictive-alerts');
+      if (!container) return;
+
+      // Kriz öngörülünce default "all clear" durumunu gizle
+      const defaultStatus = document.getElementById('pa-default-status');
+      if (defaultStatus) defaultStatus.style.display = 'none';
+
+      const item = document.createElement('div');
+      item.className = 'pa-item';
+      item.innerHTML = `
+        <div class="pa-item-icon">◈</div>
+        <div class="pa-item-content">
+          <div class="pa-item-text">${text}</div>
+          <div class="pa-item-meta">${source}${ts ? ' · ' + ts : ''}</div>
+        </div>
+        ${confidence ? `<div class="pa-item-conf">${confidence}</div>` : ''}
+      `;
+      container.appendChild(item);
+
+      const lastUpdated = document.getElementById('pa-last-updated');
+      if (lastUpdated) lastUpdated.textContent = `Güncellendi: ${ts || 'simdi'}`;
+
+      document.dispatchEvent(new CustomEvent('contrail:predictive-alert', {
+        detail: { text, confidence, source, ts }
+      }));
+    }
+
+    function clearPredictiveAlerts() {
+      const container = document.getElementById('predictive-alerts');
+      if (!container) return;
+      container.querySelectorAll('.pa-item').forEach(el => el.remove());
+      const defaultStatus = document.getElementById('pa-default-status');
+      if (defaultStatus) defaultStatus.style.display = '';
+    }
+
+    return { updateField, updateSection, fetchSection, fetchAll, pushPredictiveAlert, clearPredictiveAlerts };
+  })();
+
+  /* ── Live clock ─────────────────────────────────────────── */
+  function updateClock() {
+    const now  = new Date();
+    const dd   = String(now.getUTCDate()).padStart(2, '0');
+    const mm   = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const yyyy = now.getUTCFullYear();
+    const hh   = String(now.getUTCHours()).padStart(2, '0');
+    const min  = String(now.getUTCMinutes()).padStart(2, '0');
+    const str  = `${dd}.${mm}.${yyyy} · ${hh}:${min} UTC`;
+    const clk  = document.getElementById('live-clock');
+    const fclk = document.getElementById('footer-clock');
+    if (clk)  clk.textContent  = str;
+    if (fclk) fclk.textContent = str;
+  }
+  updateClock();
+  setInterval(updateClock, 30000);
+
+  /* ── Filter tabs ────────────────────────────────────────── */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.dispatchEvent(new CustomEvent('contrail:filter', { detail: { tab: btn.dataset.tab } }));
+    });
+  });
+
+  /* ── Region tabs ────────────────────────────────────────── */
+  document.querySelectorAll('.region-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.dispatchEvent(new CustomEvent('contrail:region', { detail: { region: btn.dataset.region } }));
+    });
+  });
+
+  /* ── View all signals ───────────────────────────────────── */
+  document.getElementById('view-all-signals').addEventListener('click', () => {
+    document.dispatchEvent(new CustomEvent('contrail:signals-expand'));
+  });
+
+  /* ── Global erişim ──────────────────────────────────────── */
+  window.ContrailAPI = ContrailAPI;
+
+  /* ── DEV DEMO (production'da sil) ──────────────────────── */
+  // ContrailAPI.pushPredictiveAlert({
+  //   text: 'UKLV hava sahasında kapasite krizi 2 saat içinde olası. ANA rotasyonları etkilenebilir.',
+  //   confidence: '87%', source: 'contrail-v2', ts: '17:46 UTC'
+  // });
+  /* ═══════════════════════════════════════════════════════════════
+     STEP 1: SIGNAL FEED GERÇEK VERİ ENTEGRASYONU
+  ═══════════════════════════════════════════════════════════════ */
+  
+  async function loadSignalFeed(tabFilter = 'all') {
+    const feedContainer = document.getElementById('signal-feed');
+    if (!feedContainer) return;
+
+    // 1. Loading Durumu (Veri çekilirken profesyonel görünüm)
+    const headerHTML = `
+        <div class="section-header">
+          <span class="section-label">SIGNAL FEED</span>
+          <span class="section-meta" id="signal-meta">Updating...</span>
+        </div>
+    `;
+    // İçeriği temizle ve view-all butonunu saklamak için yapıyı kur
+    feedContainer.innerHTML = headerHTML + `<div id="signal-list">Yükleniyor...</div>` + `
+        <button class="view-all-btn" id="view-all-signals">
+          View all signals and archive →
+        </button>
+    `;
+
+    try {
+      // 2. FastAPI'den gerçek veriyi çek (Tab filtresiyle uyumlu)
+      const response = await fetch(`http://localhost:8000/api/signals/latest?limit=10&kategori=${tabFilter}`);
+      if (!response.ok) throw new Error("API Hatası");
+      
+      const signals = await response.json();
+      const listContainer = document.getElementById('signal-list');
+      listContainer.innerHTML = ''; // Loading yazısını temizle
+
+      // 3. Meta etiketini güncelle (X active · live)
+      document.getElementById('signal-meta').textContent = `${signals.length} active · live`;
+
+      // 4. Gelen veriyi döngüye sok ve HTML elementlerini oluştur
+      signals.forEach(signal => {
+        // Skor Renk ve Stil Mantığı (9-10 Kırmızı, 7-8 Turuncu, 5-6 Nötr)
+        let scoreStyle = 'color: var(--muted); border-color: var(--border);';
+        let borderColor = 'border-bottom: 1px solid var(--border);'; // Kartın alt çizgisi
+        
+        if (signal.score >= 9) {
+            scoreStyle = 'color: var(--red); border-color: rgba(232,67,67,0.3); background: rgba(232,67,67,0.1);';
+            borderColor = 'border-left: 2px solid var(--red); padding-left: 10px; border-bottom: 1px solid var(--border);';
+        } else if (signal.score >= 7) {
+            scoreStyle = 'color: var(--yellow); border-color: rgba(224,160,32,0.3); background: rgba(224,160,32,0.1);';
+        }
+
+        // Kategori Rozeti (Badge) Rengini Belirle
+        let catBadge = `<span class="badge badge-op">${signal.category_label}</span>`;
+        if(signal.category_label.toLowerCase().includes('finan')) catBadge = `<span class="badge badge-fin">${signal.category_label}</span>`;
+        if(signal.category_label.toLowerCase().includes('jeopol') || signal.category_label.toLowerCase().includes('geo')) catBadge = `<span class="badge badge-safety">${signal.category_label}</span>`;
+
+        // Kart HTML'ini oluştur
+        const cardHTML = `
+          <div class="signal-card" style="${borderColor}">
+            <div class="signal-top">
+              <div class="signal-tags">
+                <span class="badge badge-airline">${signal.carrier_name}</span>
+                ${catBadge}
+              </div>
+              <span class="signal-score" style="${scoreStyle}">${signal.score}/10</span>
+            </div>
+            <div class="signal-headline">${signal.headline}</div>
+            <div class="signal-body">${signal.summary}</div>
+          </div>
+        `;
+        listContainer.insertAdjacentHTML('beforeend', cardHTML);
+      });
+
+      // Eğer hiç haber yoksa
+      if (signals.length === 0) {
+        listContainer.innerHTML = `<div style="padding:15px; color:var(--muted); font-size:11px;">Belirlenen filtreye uygun aktif sinyal bulunamadı.</div>`;
+      }
+
+    } catch (error) {
+      console.error("Signal Feed yüklenemedi:", error);
+      document.getElementById('signal-list').innerHTML = `<div style="color:var(--red); padding:10px;">Veri akışı sağlanamadı. Bağlantıyı kontrol edin.</div>`;
+      document.getElementById('signal-meta').textContent = "Offline";
+    }
+  }
+
+  // Sayfa yüklendiğinde Step 1'i ateşle
+  document.addEventListener("DOMContentLoaded", () => {
+    loadSignalFeed('all');
+  });
+
+  // Filtre butonlarına tıklandığında anında çalışması için (Step 5'in temeli)
+  document.addEventListener('contrail:filter', (e) => {
+    loadSignalFeed(e.detail.tab);
+  });
+  
+  /* ═══════════════════════════════════════════════════════════════
+   KPI STRIP — GERÇEK VERİYE BAĞLANTI
+   Her 5 dakikada bir market_data endpoint'inden güncellenir
+═══════════════════════════════════════════════════════════════ */
+async function loadKPIStrip() {
+    const semboller = [
+        { id: "kpi-brent",        sembol: "brent" },
+        { id: "kpi-jetfuel",      sembol: "jetfuel" },
+        { id: "kpi-eurusd",       sembol: "eurusd" },
+        { id: "kpi-usdtry",       sembol: "usdtry" },
+        { id: "kpi-usdstrength",  sembol: "dxy" },
+        { id: "kpi-airlineindex", sembol: "airline-index" },
+    ];
+
+    for (const item of semboller) {
+        try {
+            const res = await fetch(`/api/market/${item.sembol}`);
+            if (!res.ok) continue;
+            const data = await res.json();
+
+            const card = document.getElementById(item.id);
+            if (!card) continue;
+
+            const priceEl  = card.querySelector(".kpi-value");
+            const changeEl = card.querySelector(".kpi-change");
+
+            if (priceEl) {
+                priceEl.textContent = data.price;
+                priceEl.className = `kpi-value ${data.change_class}`;
+            }
+            if (changeEl) {
+                changeEl.textContent = data.change;
+                changeEl.className = `kpi-change ${data.change_class}`;
+            }
+        } catch (e) {
+            console.warn(`KPI ${item.sembol} yüklenemedi:`, e);
+        }
+    }
+}
+
+// Sayfa açılınca çalıştır
+document.addEventListener("DOMContentLoaded", () => {
+    loadSignalFeed("all");
+    loadKPIStrip();
+});
+
+// Her 5 dakikada güncelle
+setInterval(loadKPIStrip, 5 * 60 * 1000);
+
+</script>
 </body>
 </html>

@@ -1702,6 +1702,153 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Her 15 saniyede güncelle
 setInterval(loadCarrierCards, 15 * 1000);
+/* ═══════════════════════════════════════════════════════════════
+   MAYDAY ALERTS — GERÇEK VERİYE BAĞLANTI
+═══════════════════════════════════════════════════════════════ */
+async function loadMaydayAlerts() {
+    try {
+        const res = await fetch("/api/alerts/mayday");
+        if (!res.ok) return;
+        const alerts = await res.json();
+
+        const container = document.getElementById("mayday-alerts");
+        if (!container) return;
+
+        // Header'ı koru, alert itemları temizle
+        const header = container.querySelector(".mayday-header");
+        container.innerHTML = "";
+        if (header) container.appendChild(header);
+
+        if (alerts.length === 0) {
+            container.innerHTML += `
+                <div style="padding:12px 0; color:var(--muted); font-size:11px;">
+                    Son 2 saatte skor 7+ kritik gelişme yok.
+                </div>`;
+            return;
+        }
+
+        alerts.forEach(alert => {
+            const catClass = alert.category_label?.toLowerCase().includes("fin") ? "badge-fin"
+                : alert.category_label?.toLowerCase().includes("safe") ? "badge-safety"
+                : alert.category_label?.toLowerCase().includes("reg") ? "badge-reg"
+                : "badge-op";
+
+            container.innerHTML += `
+                <div class="alert-item">
+                    <div class="alert-top">
+                        <span class="badge badge-airline">${alert.carrier_name}</span>
+                        <span class="badge ${catClass}">${alert.category_label}</span>
+                    </div>
+                    <div class="alert-headline">${alert.headline}</div>
+                    <div class="alert-meta">${alert.meta}</div>
+                </div>`;
+        });
+
+    } catch (e) {
+        console.warn("Mayday alerts yüklenemedi:", e);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LCC vs FSC SENTIMENT — GERÇEK VERİYE BAĞLANTI
+═══════════════════════════════════════════════════════════════ */
+async function loadSentiment() {
+    try {
+        const res = await fetch("/api/sentiment");
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const container = document.getElementById("lcc-fsc");
+        if (!container) return;
+
+        const rows = container.querySelectorAll(".sentiment-row");
+        rows.forEach(row => {
+            const tip = row.dataset.type;
+            const airline = row.dataset.airline;
+            const list = tip === "lcc" ? data.lcc : data.fsc;
+
+            const match = list?.find(s =>
+                s["sentiment-airline"]?.toLowerCase().includes(airline?.toLowerCase())
+            );
+            if (!match) return;
+
+            const fill = row.querySelector(".sentiment-fill");
+            const score = row.querySelector(".sentiment-score");
+            if (fill) fill.style.width = match["sentiment-fill"];
+            if (score) score.textContent = match["sentiment-score"];
+        });
+
+    } catch (e) {
+        console.warn("Sentiment yüklenemedi:", e);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RUNWAY GAINERS — GERÇEK VERİYE BAĞLANTI
+═══════════════════════════════════════════════════════════════ */
+async function loadRunwayGainers() {
+    try {
+        const res = await fetch("/api/movers");
+        if (!res.ok) return;
+        const movers = await res.json();
+
+        movers.forEach((mover, i) => {
+            const item = document.getElementById(`mover-${i + 1}`);
+            if (!item) return;
+
+            const nameEl = item.querySelector(".mover-name");
+            const descEl = item.querySelector(".mover-desc");
+            const pctEl  = item.querySelector(".mover-pct");
+
+            if (nameEl) nameEl.innerHTML = `${mover.name} <span class="mover-ticker">${mover.ticker_label || ""}</span>`;
+            if (descEl) descEl.textContent = mover.headline || "—";
+            if (pctEl) {
+                pctEl.textContent = mover.change_pct;
+                pctEl.className = `mover-pct ${mover.change_class}`;
+            }
+        });
+
+    } catch (e) {
+        console.warn("Runway gainers yüklenemedi:", e);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INTELLIGENCE BRIEF — GERÇEK VERİYE BAĞLANTI
+═══════════════════════════════════════════════════════════════ */
+async function loadIntelBrief() {
+    try {
+        const res = await fetch("/api/intel/brief");
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const textEl = document.getElementById("intel-brief-text");
+        const tsEl   = document.getElementById("brief-ts");
+
+        if (textEl && data.summary) textEl.textContent = data.summary;
+        if (tsEl && data.guncelleme) tsEl.textContent = data.guncelleme;
+
+    } catch (e) {
+        console.warn("Intel brief yüklenemedi:", e);
+    }
+}
+
+// DOMContentLoaded'ı güncelle — tüm fonksiyonları çalıştır
+document.addEventListener("DOMContentLoaded", () => {
+    loadSignalFeed("all");
+    loadKPIStrip();
+    loadCarrierCards();
+    loadMaydayAlerts();
+    loadSentiment();
+    loadRunwayGainers();
+    loadIntelBrief();
+});
+
+// Periyodik güncellemeler
+setInterval(loadMaydayAlerts,   2 * 60 * 1000);   // 2 dakika
+setInterval(loadSentiment,      5 * 60 * 1000);   // 5 dakika
+setInterval(loadRunwayGainers,  5 * 60 * 1000);   // 5 dakika
+setInterval(loadIntelBrief,    30 * 60 * 1000);   // 30 dakika
 </script>
 </body>
 </html>

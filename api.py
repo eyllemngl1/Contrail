@@ -74,16 +74,78 @@ async def track_engagement(data: TelemetryEngagement):
 def carrier_data(ticker: str):
     conn = db_baglan()
     cursor = conn.cursor()
-    # Son 24 saatteki haber sayısını gerçek veritabanından çek
+
+    # Haber sayısı
     cursor.execute("""
         SELECT COUNT(*) as news_count
-        FROM haberler 
-        WHERE borsa_kodu ILIKE %s AND olusturulma >= NOW() - INTERVAL '24 hours'
+        FROM haberler
+        WHERE borsa_kodu ILIKE %s
+          AND olusturulma >= NOW() - INTERVAL '24 hours'
     """, (f"%{ticker}%",))
     row = cursor.fetchone()
     news_count = row["news_count"] if row else 0
+
+    # Gerçek hisse fiyatı
+    cursor.execute("""
+        SELECT fiyat, degisim_yuzde, degisim_yon
+        FROM market_data
+        WHERE sembol = %s
+        ORDER BY guncelleme DESC
+        LIMIT 1
+    """, (ticker,))
+    market = cursor.fetchone()
     cursor.close()
     conn.close()
+
+    if market and market["fiyat"]:
+        fiyat = float(market["fiyat"])
+        degisim = float(market["degisim_yuzde"])
+        yon = market["degisim_yon"]
+
+        # Sembol bazlı para birimi formatı
+        para_birimleri = {
+            "THYAO.IS": "₺",
+            "LHA.DE":   "€",
+            "AF.PA":    "€",
+            "C6L.SI":   "S$",
+            "9202.T":   "¥",
+        }
+        sembol = para_birimleri.get(ticker, "$")
+        price_str = f"{sembol}{fiyat:.2f}"
+        change_str = f"{degisim:+.2f}%"
+
+        # Volatilite — degisim_yuzde'nin mutlak değerine göre
+        abs_degisim = abs(degisim)
+        if abs_degisim < 1:
+            vol_label = "Low vol"
+            vol_class = "vol-low"
+            bar_width = "25%"
+        elif abs_degisim < 3:
+            vol_label = "Mid vol"
+            vol_class = "vol-mid"
+            bar_width = "55%"
+        else:
+            vol_label = "High vol"
+            vol_class = "vol-high"
+            bar_width = "85%"
+    else:
+        price_str = "—"
+        change_str = "—"
+        yon = "neu"
+        vol_label = "—"
+        vol_class = ""
+        bar_width = "0%"
+
+    return {
+        "ticker_label": ticker,
+        "price": price_str,
+        "change": change_str,
+        "change_class": yon,
+        "volume_bar_width": bar_width,
+        "vol_label": vol_label,
+        "vol_class": vol_class,
+        "news_count": f"{news_count} news · 24h"
+    }
 
     # Yahoo Finance bağlanana kadar statik mock veri, ama dinamik haber sayısı ile
     mock_data = {

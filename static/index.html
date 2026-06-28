@@ -1636,7 +1636,72 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Her 5 dakikada güncelle
 setInterval(loadKPIStrip, 5 * 60 * 1000);
+/* ═══════════════════════════════════════════════════════════════
+   CARRIER RADAR — GERÇEK VERİYE BAĞLANTI
+═══════════════════════════════════════════════════════════════ */
+async function loadCarrierCards() {
+    const cards = document.querySelectorAll(".carrier-card[data-ticker]");
+    
+    for (const card of cards) {
+        const ticker = card.dataset.ticker;
+        if (!ticker) continue;
 
+        try {
+            const res = await fetch(`/api/carriers/${ticker}`);
+            if (!res.ok) continue;
+            const data = await res.json();
+
+            // Fiyat
+            const priceEl = card.querySelector(".carrier-price");
+            if (priceEl) {
+                priceEl.textContent = data.price;
+                priceEl.className = `carrier-price ${data.change_class}`;
+            }
+
+            // Değişim
+            const changeEl = card.querySelector(".carrier-change");
+            if (changeEl) {
+                changeEl.textContent = data.change;
+                changeEl.className = `carrier-change ${data.change_class}`;
+            }
+
+            // Haber sayısı
+            const metaEl = card.querySelector(".carrier-meta");
+            if (metaEl) metaEl.textContent = data.news_count;
+
+            // Volatilite rozeti
+            const volEl = card.querySelector(".vol-badge");
+            if (volEl) {
+                volEl.textContent = data.vol_label;
+                volEl.className = `vol-badge ${data.vol_class}`;
+            }
+
+            // Bar genişliği
+            const barEl = card.querySelector(".carrier-bar-fill");
+            if (barEl) {
+                barEl.style.width = data.volume_bar_width;
+                barEl.style.background = data.change_class === "pos" 
+                    ? "var(--green)" 
+                    : data.change_class === "neg" 
+                    ? "var(--red)" 
+                    : "var(--muted)";
+            }
+
+        } catch (e) {
+            console.warn(`Carrier ${ticker} yüklenemedi:`, e);
+        }
+    }
+}
+
+// DOMContentLoaded'a ekle
+document.addEventListener("DOMContentLoaded", () => {
+    loadSignalFeed("all");
+    loadKPIStrip();
+    loadCarrierCards();
+});
+
+// Her 15 saniyede güncelle
+setInterval(loadCarrierCards, 15 * 1000);
 </script>
 </body>
 </html>
